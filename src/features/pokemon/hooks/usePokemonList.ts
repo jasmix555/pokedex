@@ -7,15 +7,14 @@ export function usePokemonList({ limit = 20 } = {}) {
   const [offset, setOffset] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
 
-  // ✅ Track which offsets have already been fetched
+  // Prevent duplicate offset fetches
   const fetchedOffsetsRef = useRef<Set<number>>(new Set())
 
   const loadPokemon = useCallback(async () => {
-    // ✅ Hard guard against duplicate fetches
-    if (fetchedOffsetsRef.current.has(offset)) {
-      return
-    }
+    if (isLoading || !hasMore) return
+    if (fetchedOffsetsRef.current.has(offset)) return
 
     fetchedOffsetsRef.current.add(offset)
 
@@ -25,7 +24,17 @@ export function usePokemonList({ limit = 20 } = {}) {
 
       const newPokemon = await fetchPokemonList(limit, offset)
 
+      // ✅ Stop infinite scroll when API is exhausted
+      if (newPokemon.length === 0) {
+        setHasMore(false)
+        return
+      }
+
       setPokemon(prev => [...prev, ...newPokemon])
+
+      if (newPokemon.length < limit) {
+        setHasMore(false)
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Unexpected error occurred'
@@ -33,13 +42,14 @@ export function usePokemonList({ limit = 20 } = {}) {
     } finally {
       setIsLoading(false)
     }
-  }, [limit, offset])
+  }, [limit, offset, isLoading, hasMore])
 
   useEffect(() => {
     loadPokemon()
   }, [loadPokemon])
 
   const loadMore = () => {
+    if (!hasMore || isLoading) return
     setOffset(prev => prev + limit)
   }
 
@@ -48,5 +58,6 @@ export function usePokemonList({ limit = 20 } = {}) {
     isLoading,
     error,
     loadMore,
+    hasMore,
   }
 }

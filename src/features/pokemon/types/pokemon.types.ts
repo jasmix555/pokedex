@@ -18,9 +18,24 @@ export type PokemonType =
   | 'steel'
   | 'fairy'
 
+export interface PokemonStat {
+  name: string
+  value: number
+}
+
+export interface EvolutionNode {
+  name: string
+  id: number
+}
+
+
 export interface Pokemon {
   id: number
   name: string
   image: string
   types: PokemonType[]
+  stats: PokemonStat[]
+
+  evolvesFrom?: EvolutionNode | null
+  evolutions?: EvolutionNode[]
 }

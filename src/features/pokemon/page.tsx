@@ -1,128 +1,113 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+'use client'
+
+import { useRef, useState, useEffect } from 'react'
+
 import { usePokemonList } from './hooks/usePokemonList'
-import { fetchPokemonByName } from './api/pokemon.api'
-import { Pokemon } from './types/pokemon.types'
+import { usePokemonSearch } from './hooks/usePokemonSearch'
+
 import { PokemonGrid } from './components/PokemonGrid'
 import { PokemonSearch } from './components/PokemonSearch'
+import { PokemonModal } from './components/PokemonModal'
+import { PokemonFilter } from './components/PokemonFilter'
+
+import { Pokemon } from './types/pokemon.types'
+import { GENERATIONS, GenerationKey } from '@/constants/generations'
 
 export default function PokedexPage() {
+  /* ----------------------------------------
+   * Data sources
+   * ---------------------------------------- */
   const {
     pokemon,
-    isLoading,
+    isLoading: isListLoading,
     error,
     loadMore,
+    hasMore,
   } = usePokemonList({ limit: 20 })
 
   const [search, setSearch] = useState('')
-  const [remotePokemon, setRemotePokemon] = useState<Pokemon | null>(null)
-  const [isRemoteLoading, setIsRemoteLoading] = useState(false)
+  const [selectedPokemon, setSelectedPokemon] =
+    useState<Pokemon | null>(null)
+  const [generation, setGeneration] =
+    useState<GenerationKey>('all')
 
-  const sentinelRef = useRef<HTMLDivElement | null>(null)
-
-  const isSearching = search.trim().length > 0
-
-  /* ----------------------------------------
-   * Client-side filtered Pokémon
-   * ---------------------------------------- */
-  const filteredPokemon = useMemo(() => {
-    if (!isSearching) return pokemon
-
-    const query = search.toLowerCase()
-    return pokemon.filter(p =>
-      p.name.toLowerCase().includes(query)
-    )
-  }, [pokemon, search, isSearching])
+  const {
+    isSearching,
+    isLoading: isSearchLoading,
+    results: searchResults,
+  } = usePokemonSearch(search)
 
   /* ----------------------------------------
-   * Server-side lookup (fallback)
+   * Derived loading state (MUST be above effects)
    * ---------------------------------------- */
-  useEffect(() => {
-    if (!isSearching) {
-      setRemotePokemon(null)
-      return
-    }
+  const isGridLoading =
+  isSearching
+    ? isSearchLoading && searchResults.length === 0
+    : isListLoading && pokemon.length === 0
 
-    if (filteredPokemon.length > 0) {
-      setRemotePokemon(null)
-      return
-    }
-
-    let cancelled = false
-
-    async function searchRemote() {
-      try {
-        setIsRemoteLoading(true)
-        const result = await fetchPokemonByName(search)
-        if (!cancelled) {
-          setRemotePokemon(result)
-        }
-      } catch {
-        if (!cancelled) {
-          setRemotePokemon(null)
-        }
-      } finally {
-        if (!cancelled) {
-          setIsRemoteLoading(false)
-        }
-      }
-    }
-
-    searchRemote()
-
-    return () => {
-      cancelled = true
-    }
-  }, [search, isSearching, filteredPokemon.length])
 
   /* ----------------------------------------
    * Infinite scroll (browse mode only)
    * ---------------------------------------- */
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+
   useEffect(() => {
-    if (!sentinelRef.current) return
-    if (isSearching) return
+  if (isSearching) return
+  if (!sentinelRef.current) return
 
-    const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && !isLoading) {
-          loadMore()
-        }
-      },
-      { rootMargin: '200px' }
-    )
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting && !isListLoading) {
+        loadMore()
+      }
+    },
+    { rootMargin: '200px' }
+  )
 
-    observer.observe(sentinelRef.current)
-    return () => observer.disconnect()
-  }, [loadMore, isLoading, isSearching])
+  observer.observe(sentinelRef.current)
+  return () => observer.disconnect()
+}, [isSearching, isListLoading, loadMore])
+
 
   /* ----------------------------------------
-   * Final render list
+   * Derived data
    * ---------------------------------------- */
-  const displayPokemon = useMemo(() => {
-    if (filteredPokemon.length > 0) return filteredPokemon
-    if (remotePokemon) return [remotePokemon]
-    return []
-  }, [filteredPokemon, remotePokemon])
+
+ const displayPokemon = (() => {
+  if (isSearching) {
+    return searchResults
+  }
+
+  const range = GENERATIONS[generation].range
+  if (!range) return pokemon
+
+  const [min, max] = range
+  return pokemon.filter(
+    p => p.id >= min && p.id <= max
+  )
+})()
+
 
   /* ----------------------------------------
    * Error state
    * ---------------------------------------- */
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-destructive font-medium">
-          Failed to load Pokémon
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {error}
-        </p>
+      <div className="p-8 text-center text-destructive">
+        Failed to load Pokémon
       </div>
     )
   }
 
+  /* ----------------------------------------
+   * Render
+   * ---------------------------------------- */
   return (
     <div className="p-4 space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold">Pokédex</h1>
+      <header className="space-y-1">
+        <h1 className="text-2xl font-bold">
+          Pokédex
+        </h1>
         <p className="text-muted-foreground">
           Browse Pokémon from the PokeAPI
         </p>
@@ -133,25 +118,30 @@ export default function PokedexPage() {
         onChange={setSearch}
       />
 
-      <PokemonGrid
-        pokemon={displayPokemon}
-        isLoading={
-          (!isSearching && isLoading) ||
-          (isSearching && isRemoteLoading)
-        }
+      <PokemonFilter
+        value={generation}
+        onChange={setGeneration}
       />
 
-      {isSearching &&
-        !isRemoteLoading &&
-        displayPokemon.length === 0 && (
-          <p className="text-center text-muted-foreground">
-            No Pokémon found
-          </p>
-        )}
+      <PokemonGrid
+        pokemon={displayPokemon}
+        isLoading={isGridLoading}
+        onSelect={setSelectedPokemon}
+      />
 
-      {!isSearching && (
-        <div ref={sentinelRef} className="h-1" />
+      {/* Infinite scroll sentinel */}
+      {!isSearching && hasMore && (
+        <div
+          ref={sentinelRef}
+          aria-hidden
+          className="h-1"
+        />
       )}
+
+      <PokemonModal
+        pokemon={selectedPokemon}
+        onClose={() => setSelectedPokemon(null)}
+      />
     </div>
   )
 }

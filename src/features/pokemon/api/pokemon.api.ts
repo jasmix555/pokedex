@@ -1,21 +1,19 @@
+// features/pokemon/api/pokemon.api.ts
+
 import {
   PokemonListResponse,
   PokemonResponse,
 } from '../types/pokemon-api.types'
-import { Pokemon } from '../types/pokemon.types'
 import { mapPokemon } from '../utils/mapPokemon'
 
-const BASE_URL = 'https://pokeapi.co/api/v2'
+/* ---------------- list pagination ---------------- */
 
-/* ----------------------------------------
- * Fetch paginated Pokémon list
- * ---------------------------------------- */
 export async function fetchPokemonList(
   limit: number,
   offset: number
-): Promise<Pokemon[]> {
+) {
   const res = await fetch(
-    `${BASE_URL}/pokemon?limit=${limit}&offset=${offset}`
+    `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`
   )
 
   if (!res.ok) {
@@ -24,37 +22,51 @@ export async function fetchPokemonList(
 
   const data: PokemonListResponse = await res.json()
 
-  // Fetch details in parallel
-  const pokemonDetails = await Promise.all(
-    data.results.map(async (item) => {
+  // 👇 hydrate each Pokémon
+  const detailed = await Promise.all(
+    data.results.map(async item => {
       const res = await fetch(item.url)
-
       if (!res.ok) {
-        throw new Error('Failed to fetch Pokémon details')
+        throw new Error('Failed to fetch Pokémon')
       }
-
-      const pokemonData: PokemonResponse = await res.json()
-      return mapPokemon(pokemonData)
+      const pokemon: PokemonResponse = await res.json()
+      return mapPokemon(pokemon)
     })
   )
 
-  return pokemonDetails
+  return detailed
 }
+/* ---------------- single pokemon ---------------- */
 
-/* ----------------------------------------
- * Fetch Pokémon by name (search / lookup)
- * ---------------------------------------- */
-export async function fetchPokemonByName(
-  name: string
-): Promise<Pokemon> {
+export async function fetchPokemonByName(name: string) {
   const res = await fetch(
-    `${BASE_URL}/pokemon/${name.toLowerCase()}`
+    `https://pokeapi.co/api/v2/pokemon/${name}`
   )
 
   if (!res.ok) {
-    throw new Error('Pokemon not found')
+    throw new Error('Failed to fetch Pokémon')
   }
 
   const data: PokemonResponse = await res.json()
-  return mapPokemon(data)
+  return data
+}
+
+/* ---------------- FULL NAME INDEX (SEARCH) ---------------- */
+
+export interface PokemonNameIndex {
+  name: string
+  url: string
+}
+
+export async function fetchPokemonNameIndex(): Promise<PokemonNameIndex[]> {
+  const res = await fetch(
+    'https://pokeapi.co/api/v2/pokemon'
+  )
+
+  if (!res.ok) {
+    throw new Error('Failed to load Pokémon index')
+  }
+
+  const data = await res.json()
+  return data.results
 }

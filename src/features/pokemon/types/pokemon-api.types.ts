@@ -17,6 +17,7 @@ export interface PokemonResponse {
   name: string
   height: number
   weight: number
+
   sprites: {
     front_default: string | null
     other?: {
@@ -25,9 +26,17 @@ export interface PokemonResponse {
       }
     }
   }
+
   types: {
     slot: number
     type: {
+      name: string
+    }
+  }[]
+
+  stats: {
+    base_stat: number
+    stat: {
       name: string
     }
   }[]
