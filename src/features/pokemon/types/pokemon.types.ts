@@ -33,6 +33,7 @@ export interface Pokemon {
   id: number
   name: string
   image: string
+  sprite?: string
   types: PokemonType[]
   stats: PokemonStat[]
 

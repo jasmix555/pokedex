@@ -1,4 +1,4 @@
-import { GENERATIONS , GenerationKey } from "@/constants/generations"
+import { GENERATIONS, GenerationKey } from "@/constants/generations"
 
 interface Props {
   value: GenerationKey
@@ -13,7 +13,7 @@ export function PokemonFilter({ value, onChange }: Props) {
           key={key}
           onClick={() => onChange(key as GenerationKey)}
           className={`
-            px-3 py-1 rounded-md text-sm border
+            px-3 py-2 rounded-md text-sm border whitespace-nowrap
             ${value === key
               ? 'bg-blue-600 text-white border-blue-600'
               : 'bg-white text-black border-gray-300 hover:bg-gray-100'}

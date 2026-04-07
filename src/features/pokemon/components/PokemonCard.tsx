@@ -1,5 +1,7 @@
 import { Pokemon } from '../types/pokemon.types'
 import { getTypeIcon } from '../utils/typeIcon'
+import { getTypeColor } from '../utils/typeColor'
+import { PokemonImage } from './PokemonImage'
 
 interface Props {
   pokemon: Pokemon
@@ -7,47 +9,61 @@ interface Props {
 }
 
 export function PokemonCard({ pokemon, onClick }: Props) {
+  const primaryType = pokemon.types[0]
+  const primaryColor = getTypeColor(primaryType)
+
   return (
     <button
       onClick={() => onClick(pokemon)}
-      className="
+      className={`
         w-full
+        flex flex-col
         text-left
         rounded-lg
-        border
-        border-zinc-100
-        bg-zinc-100
-        p-3
-        space-y-2
-        hover:shadow-md
+        border-2
+        ${primaryColor.border}
+        bg-white
+        overflow-hidden
+        hover:shadow-lg
         transition
-      "
+        hover:scale-105
+      `}
     >
-      <img
-        src={pokemon.image}
-        alt={pokemon.name}
-        loading="lazy"
-        className="w-full aspect-square object-contain"
-      />
-
-      <div className="flex items-baseline gap-2">
-        <span className="text-sm text-zinc-400">
-          #{pokemon.id}
+      <div className={`${primaryColor.bg} px-4 py-3`}>
+        <span className="text-xs font-bold text-gray-700">
+          #{String(pokemon.id).padStart(3, '0')}
         </span>
-        <h3 className="text-base font-semibold capitalize text-zinc-800">
+        <h3 className="text-lg font-bold capitalize text-gray-900 mt-1">
           {pokemon.name}
         </h3>
       </div>
 
-      <div className="flex gap-2">
-        {pokemon.types.map(type => (
-          <img
-            key={type}
-            src={getTypeIcon(type)}
-            alt={type}
-            className="h-5 w-5"
-          />
-        ))}
+      <div className="flex flex-col p-4 space-y-3 flex-1">
+        <PokemonImage
+          src={pokemon.sprite ?? pokemon.image}
+          alt={pokemon.name}
+          className="w-full aspect-square"
+        />
+
+        <div className="flex flex-wrap gap-2">
+          {pokemon.types.map(type => {
+            const color = getTypeColor(type)
+            return (
+              <span
+                key={type}
+                className={`
+                  inline-flex items-center gap-1 
+                  ${color.bg}
+                  ${color.text}
+                  px-2.5 py-1 rounded-full text-xs font-semibold
+                `}
+              >
+                <img src={getTypeIcon(type)} alt={type} className="h-3.5 w-3.5" />
+                {type}
+              </span>
+            )
+          })}
+        </div>
       </div>
     </button>
   )
