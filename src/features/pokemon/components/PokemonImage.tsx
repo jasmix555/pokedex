@@ -11,11 +11,12 @@ export function PokemonImage({ src, alt, className }: PokemonImageProps) {
   const [loaded, setLoaded] = useState(false)
 
   return (
-    <div className={`block relative overflow-hidden rounded-xl bg-zinc-50 ${className}`}>
+    <div className={`relative overflow-hidden rounded-xl ${className} border-2 border-zinc-100`}>
+      {/* <div className="absolute left-1/2 bottom-4 h-10 w-20 -translate-x-1/2 rounded-full bg-black/10" /> */}
       <img
         src={src}
         alt={alt}
-        className={`h-full w-full object-contain transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`relative h-full w-full object-contain transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setLoaded(true)}
       />
 

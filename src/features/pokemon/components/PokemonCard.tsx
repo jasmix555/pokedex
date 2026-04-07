@@ -29,7 +29,7 @@ export function PokemonCard({ pokemon, onClick }: Props) {
         hover:scale-105
       `}
     >
-      <div className={`${primaryColor.bg} px-4 py-3`}>
+      <div className={`${primaryColor.bg} px-4 py-3 rounded-md`}>
         <span className="text-xs font-bold text-gray-700">
           #{String(pokemon.id).padStart(3, '0')}
         </span>
