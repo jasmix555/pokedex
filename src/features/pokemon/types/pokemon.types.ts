@@ -34,6 +34,7 @@ export interface Pokemon {
   name: string
   image: string
   sprite?: string
+  femaleSprite?: string | null
   types: PokemonType[]
   stats: PokemonStat[]
 

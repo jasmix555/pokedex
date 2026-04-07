@@ -20,6 +20,7 @@ export interface PokemonResponse {
 
   sprites: {
     front_default: string | null
+    front_female: string | null
     other?: {
       'official-artwork'?: {
         front_default: string | null

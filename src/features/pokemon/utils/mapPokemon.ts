@@ -6,6 +6,7 @@ export function mapPokemon(apiPokemon: PokemonResponse): Pokemon {
     id: apiPokemon.id,
     name: apiPokemon.name,
     sprite: apiPokemon.sprites.front_default ?? '',
+    femaleSprite: apiPokemon.sprites.front_female ?? null,
     image:
       apiPokemon.sprites.other?.['official-artwork']?.front_default ??
       apiPokemon.sprites.front_default ??

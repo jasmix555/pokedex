@@ -1,3 +1,4 @@
+import { useState, KeyboardEvent } from 'react'
 import { Pokemon } from '../types/pokemon.types'
 import { getTypeIcon } from '../utils/typeIcon'
 import { getTypeColor } from '../utils/typeColor'
@@ -9,12 +10,28 @@ interface Props {
 }
 
 export function PokemonCard({ pokemon, onClick }: Props) {
+  const [gender, setGender] = useState<'male' | 'female'>('male')
   const primaryType = pokemon.types[0]
   const primaryColor = getTypeColor(primaryType)
+  const hasFemaleSprite = Boolean(pokemon.femaleSprite)
+  const spriteUrl =
+    gender === 'female'
+      ? pokemon.femaleSprite ?? pokemon.sprite ?? pokemon.image
+      : pokemon.sprite ?? pokemon.image
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      onClick(pokemon)
+    }
+  }
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onClick(pokemon)}
+      onKeyDown={handleKeyDown}
       className={`
         w-full
         flex flex-col
@@ -27,9 +44,12 @@ export function PokemonCard({ pokemon, onClick }: Props) {
         hover:shadow-lg
         transition
         hover:scale-105
+        focus-visible:outline-none
+        focus-visible:ring-2
+        focus-visible:ring-blue-500
       `}
     >
-      <div className={`${primaryColor.bg} px-4 py-3 rounded-md`}>
+      <div className={`${primaryColor.bg} px-4 py-3`}>
         <span className="text-xs font-bold text-gray-700">
           #{String(pokemon.id).padStart(3, '0')}
         </span>
@@ -40,10 +60,41 @@ export function PokemonCard({ pokemon, onClick }: Props) {
 
       <div className="flex flex-col p-4 space-y-3 flex-1">
         <PokemonImage
-          src={pokemon.sprite ?? pokemon.image}
+          src={spriteUrl}
           alt={pokemon.name}
           className="w-full aspect-square"
         />
+
+        {hasFemaleSprite && (
+          <div className="flex justify-center gap-2">
+            <button
+              type="button"
+              onClick={event => {
+                event.stopPropagation()
+                setGender('male')
+              }}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${gender === 'male'
+                ? 'bg-zinc-900 text-white'
+                : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+              }`}
+            >
+              ♂ Male
+            </button>
+            <button
+              type="button"
+              onClick={event => {
+                event.stopPropagation()
+                setGender('female')
+              }}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${gender === 'female'
+                ? 'bg-zinc-900 text-white'
+                : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+              }`}
+            >
+              ♀ Female
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2">
           {pokemon.types.map(type => {
@@ -65,6 +116,6 @@ export function PokemonCard({ pokemon, onClick }: Props) {
           })}
         </div>
       </div>
-    </button>
+    </div>
   )
 }

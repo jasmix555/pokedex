@@ -31,10 +31,12 @@ export function PokemonModal({ pokemon, onClose, onOpenEvolution }: Props) {
   const [evolutions, setEvolutions] = useState<EvolutionNode[]>([])
   const [isLoadingEvo, setIsLoadingEvo] = useState(false)
   const [isOpeningEvolution, setIsOpeningEvolution] = useState(false)
+  const [gender, setGender] = useState<'male' | 'female'>('male')
 
   useEffect(() => {
     if (!pokemon) return
 
+    setGender('male')
     let cancelled = false
 
     async function loadEvolution() {
@@ -71,6 +73,11 @@ export function PokemonModal({ pokemon, onClose, onOpenEvolution }: Props) {
 
   const primaryType = pokemon.types[0]
   const primaryColor = getTypeColor(primaryType)
+  const hasFemaleSprite = Boolean(pokemon.femaleSprite)
+  const spriteUrl =
+    gender === 'female'
+      ? pokemon.femaleSprite ?? pokemon.sprite ?? pokemon.image
+      : pokemon.sprite ?? pokemon.image
 
   return (
     <Dialog open={!!pokemon} onOpenChange={onClose}>
@@ -100,11 +107,36 @@ export function PokemonModal({ pokemon, onClose, onOpenEvolution }: Props) {
             <div className="col-span-1 space-y-4">
               <div className="flex justify-center">
                 <PokemonImage
-                  src={pokemon.sprite ?? pokemon.image}
+                  src={spriteUrl}
                   alt={pokemon.name}
                   className="h-32 w-32 sm:h-40 sm:w-40"
                 />
               </div>
+
+              {hasFemaleSprite && (
+                <div className="flex justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setGender('male')}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${gender === 'male'
+                      ? 'bg-zinc-900 text-white'
+                      : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                    }`}
+                  >
+                    ♂ Male
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGender('female')}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${gender === 'female'
+                      ? 'bg-zinc-900 text-white'
+                      : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                    }`}
+                  >
+                    ♀ Female
+                  </button>
+                </div>
+              )}
 
               <div className="flex flex-wrap gap-2 justify-center">
                 {pokemon.types.map(type => {
