@@ -171,7 +171,7 @@ export default function PokedexPage() {
    * Render
    * ---------------------------------------- */
   return (
-    <div className="p-2 space-y-5">
+    <div className="p-2 space-y-5 sm:p-4 md:p-6 lg:p-8  max-w-7xl mx-auto">
       <header className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">Pokédex</h1>
