@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 
 import { usePokemonList } from './hooks/usePokemonList'
 import { usePokemonSearch } from './hooks/usePokemonSearch'
@@ -12,7 +12,6 @@ import { PokemonFilter } from './components/PokemonFilter'
 
 import { Pokemon } from './types/pokemon.types'
 import { GENERATIONS, GenerationKey } from '@/constants/generations'
-import { t, type Language } from './constants/translations'
 
 export default function PokedexPage() {
   /* ----------------------------------------
@@ -29,11 +28,13 @@ export default function PokedexPage() {
   const [search, setSearch] = useState('')
   const [modalStack, setModalStack] = useState<Pokemon[]>([])
   const [generation, setGeneration] = useState<GenerationKey>('all')
-  const [language, setLanguage] = useState<Language>('en')
+  const [pokemonGenders, setPokemonGenders] = useState<Map<number, 'male' | 'female'>>(new Map())
 
   const selectedPokemon = modalStack.length > 0 ? modalStack[modalStack.length - 1] : null
+  const modalGender = selectedPokemon ? pokemonGenders.get(selectedPokemon.id) || 'male' : 'male'
 
-  const openPokemonModal = (pokemon: Pokemon, keepHistory = false) => {
+  const openPokemonModal = (pokemon: Pokemon, gender: 'male' | 'female', keepHistory = false) => {
+    setPokemonGenders(prev => new Map(prev.set(pokemon.id, gender)))
     setModalStack(prev =>
       keepHistory ? [...prev, pokemon] : [pokemon]
     )
@@ -42,6 +43,10 @@ export default function PokedexPage() {
   const closePokemonModal = () => {
     setModalStack([])
   }
+
+  const updatePokemonGender = useCallback((pokemonId: number, gender: 'male' | 'female') => {
+    setPokemonGenders(prev => new Map(prev.set(pokemonId, gender)))
+  }, [])
 
   const {
     isSearching,
@@ -166,33 +171,11 @@ export default function PokedexPage() {
    * Render
    * ---------------------------------------- */
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-2 space-y-5">
       <header className="flex items-start justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold">{t('pokedex', language)}</h1>
-          <p className="text-muted-foreground">{t('browse', language)}</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setLanguage('en')}
-            className={`px-3 py-2 rounded-md text-sm border font-medium ${
-              language === 'en'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-black border-gray-300 hover:bg-gray-100'
-            }`}
-          >
-            EN
-          </button>
-          <button
-            onClick={() => setLanguage('jp')}
-            className={`px-3 py-2 rounded-md text-sm border font-medium ${
-              language === 'jp'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-black border-gray-300 hover:bg-gray-100'
-            }`}
-          >
-            JP
-          </button>
+          <h1 className="text-2xl font-bold">Pokédex</h1>
+          <p className="text-muted-foreground">Browse</p>
         </div>
       </header>
 
@@ -203,7 +186,9 @@ export default function PokedexPage() {
       <PokemonGrid
         pokemon={displayPokemon}
         isLoading={isGridLoading}
-        onSelect={(pokemon: Pokemon) => openPokemonModal(pokemon)}
+        onSelect={(pokemon: Pokemon, gender: 'male' | 'female') => openPokemonModal(pokemon, gender)}
+        pokemonGenders={pokemonGenders}
+        onGenderChange={updatePokemonGender}
         similarFinds={similarFinds}
         currentGen={GENERATIONS[generation].label}
         similarNames={similarNames}
@@ -213,7 +198,9 @@ export default function PokedexPage() {
       <PokemonModal
         pokemon={selectedPokemon}
         onClose={closePokemonModal}
-        onOpenEvolution={(pokemon: Pokemon) => openPokemonModal(pokemon, true)}
+        onOpenEvolution={(pokemon: Pokemon, gender: 'male' | 'female') => openPokemonModal(pokemon, gender, true)}
+        initialGender={modalGender}
+        onGenderChange={updatePokemonGender}
       />
 
       {/* Infinite scroll sentinel */}

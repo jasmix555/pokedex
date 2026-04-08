@@ -5,7 +5,9 @@ import { PokemonSkeleton } from './PokemonSkeleton'
 interface Props {
   pokemon: Pokemon[]
   isLoading: boolean
-  onSelect: (pokemon: Pokemon) => void
+  onSelect: (pokemon: Pokemon, gender: 'male' | 'female') => void
+  pokemonGenders: Map<number, 'male' | 'female'>
+  onGenderChange: (pokemonId: number, gender: 'male' | 'female') => void
   similarFinds?: { pokemon: Pokemon; generationLabel: string }[]
   currentGen?: string
   similarNames?: string[]
@@ -16,6 +18,8 @@ export function PokemonGrid({
   pokemon,
   isLoading,
   onSelect,
+  pokemonGenders,
+  onGenderChange,
   similarFinds = [],
   currentGen,
   similarNames = [],
@@ -50,6 +54,8 @@ export function PokemonGrid({
                 <PokemonCard
                   pokemon={p}
                   onClick={onSelect}
+                  gender={pokemonGenders.get(p.id) || 'male'}
+                  onGenderChange={(gender) => onGenderChange(p.id, gender)}
                 />
                 <p className="text-xs text-center text-zinc-500">
                   {generationLabel}
@@ -98,6 +104,8 @@ export function PokemonGrid({
             key={p.id}
             pokemon={p}
             onClick={onSelect}
+            gender={pokemonGenders.get(p.id) || 'male'}
+            onGenderChange={(gender) => onGenderChange(p.id, gender)}
           />
         ))}
 
@@ -128,6 +136,8 @@ export function PokemonGrid({
                 <PokemonCard
                   pokemon={p}
                   onClick={onSelect}
+                  gender={pokemonGenders.get(p.id) || 'male'}
+                  onGenderChange={(gender) => onGenderChange(p.id, gender)}
                 />
                 <p className="text-xs text-center text-zinc-500">
                   {generationLabel}

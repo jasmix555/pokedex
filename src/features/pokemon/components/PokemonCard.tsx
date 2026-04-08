@@ -1,4 +1,4 @@
-import { useState, KeyboardEvent } from 'react'
+import { KeyboardEvent } from 'react'
 import { Pokemon } from '../types/pokemon.types'
 import { getTypeIcon } from '../utils/typeIcon'
 import { getTypeColor } from '../utils/typeColor'
@@ -6,11 +6,12 @@ import { PokemonImage } from './PokemonImage'
 
 interface Props {
   pokemon: Pokemon
-  onClick: (pokemon: Pokemon) => void
+  onClick: (pokemon: Pokemon, gender: 'male' | 'female') => void
+  gender: 'male' | 'female'
+  onGenderChange: (gender: 'male' | 'female') => void
 }
 
-export function PokemonCard({ pokemon, onClick }: Props) {
-  const [gender, setGender] = useState<'male' | 'female'>('male')
+export function PokemonCard({ pokemon, onClick, gender, onGenderChange }: Props) {
   const primaryType = pokemon.types[0]
   const primaryColor = getTypeColor(primaryType)
   const hasFemaleSprite = Boolean(pokemon.femaleSprite)
@@ -22,7 +23,7 @@ export function PokemonCard({ pokemon, onClick }: Props) {
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      onClick(pokemon)
+      onClick(pokemon, gender)
     }
   }
 
@@ -30,7 +31,7 @@ export function PokemonCard({ pokemon, onClick }: Props) {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onClick(pokemon)}
+      onClick={() => onClick(pokemon, gender)}
       onKeyDown={handleKeyDown}
       className={`
         w-full
@@ -53,9 +54,28 @@ export function PokemonCard({ pokemon, onClick }: Props) {
         <span className="text-xs font-bold text-gray-700">
           #{String(pokemon.id).padStart(3, '0')}
         </span>
-        <h3 className="text-lg font-bold capitalize text-gray-900 mt-1">
-          {pokemon.name}
-        </h3>
+        <div className="flex items-center justify-between mt-1">
+          <h3 className="text-lg font-bold capitalize text-gray-900">
+            {pokemon.name}
+          </h3>
+          {hasFemaleSprite && (
+            <button
+              type="button"
+              onClick={event => {
+                event.stopPropagation()
+                onGenderChange(gender === 'male' ? 'female' : 'male')
+              }}
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${
+                gender === 'male'
+                  ? 'bg-blue-500 text-white border-blue-600 shadow-md'
+                  : 'bg-pink-500 text-white border-pink-600 shadow-md'
+              }`}
+              title={`Switch to ${gender === 'male' ? 'female' : 'male'}`}
+            >
+              {gender === 'male' ? '♂' : '♀'}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col p-4 space-y-3 flex-1">
@@ -64,37 +84,6 @@ export function PokemonCard({ pokemon, onClick }: Props) {
           alt={pokemon.name}
           className="w-full aspect-square"
         />
-
-        {hasFemaleSprite && (
-          <div className="flex justify-center gap-2">
-            <button
-              type="button"
-              onClick={event => {
-                event.stopPropagation()
-                setGender('male')
-              }}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${gender === 'male'
-                ? 'bg-zinc-900 text-white'
-                : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-              }`}
-            >
-              ♂ Male
-            </button>
-            <button
-              type="button"
-              onClick={event => {
-                event.stopPropagation()
-                setGender('female')
-              }}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${gender === 'female'
-                ? 'bg-zinc-900 text-white'
-                : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-              }`}
-            >
-              ♀ Female
-            </button>
-          </div>
-        )}
 
         <div className="flex flex-wrap gap-2">
           {pokemon.types.map(type => {

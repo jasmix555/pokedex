@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog'
 import { XIcon } from 'lucide-react'
@@ -24,19 +26,24 @@ interface EvolutionNode {
 interface Props {
   pokemon: Pokemon | null
   onClose: () => void
-  onOpenEvolution: (pokemon: Pokemon) => void
+  onOpenEvolution: (pokemon: Pokemon, gender: 'male' | 'female') => void
+  initialGender?: 'male' | 'female'
+  onGenderChange?: (pokemonId: number, gender: 'male' | 'female') => void
 }
 
-export function PokemonModal({ pokemon, onClose, onOpenEvolution }: Props) {
+export function PokemonModal({ pokemon, onClose, onOpenEvolution, initialGender = 'male', onGenderChange }: Props) {
   const [evolutions, setEvolutions] = useState<EvolutionNode[]>([])
   const [isLoadingEvo, setIsLoadingEvo] = useState(false)
   const [isOpeningEvolution, setIsOpeningEvolution] = useState(false)
-  const [gender, setGender] = useState<'male' | 'female'>('male')
+  const [gender, setGender] = useState<'male' | 'female'>(initialGender)
+
+  useEffect(() => {
+    setGender(initialGender)
+  }, [initialGender])
 
   useEffect(() => {
     if (!pokemon) return
 
-    setGender('male')
     let cancelled = false
 
     async function loadEvolution() {
@@ -61,7 +68,7 @@ export function PokemonModal({ pokemon, onClose, onOpenEvolution }: Props) {
     try {
       setIsOpeningEvolution(true)
       const apiPokemon = await fetchPokemonByName(String(evo.id))
-      onOpenEvolution(mapPokemon(apiPokemon))
+      onOpenEvolution(mapPokemon(apiPokemon), gender)
     } catch (error) {
       console.error('Failed to open evolution:', error)
     } finally {
@@ -82,22 +89,52 @@ export function PokemonModal({ pokemon, onClose, onOpenEvolution }: Props) {
   return (
     <Dialog open={!!pokemon} onOpenChange={onClose}>
       <DialogContent showCloseButton={false} className={`bg-white text-gray-900 border-0 shadow-xl rounded-xl overflow-hidden`}>
-        <div className={`${primaryColor.bg} px-6 py-5 flex items-start justify-between`}>
-          <div>
-            <h2 className="capitalize text-2xl font-bold text-gray-900">
-              {pokemon.name}
-            </h2>
-            <p className="text-sm font-semibold text-gray-700 mt-1">
-              #{String(pokemon.id).padStart(3, '0')}
-            </p>
+        <DialogTitle className="sr-only">
+          {pokemon.name} Details
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          View details, stats, and the evolution path for this Pokémon.
+        </DialogDescription>
+        <div className={`${primaryColor.bg} px-5 py-2 flex items-start justify-between`}>
+          <div className="flex-1">
+            <div className="flex items-end justify-between mr-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mt-1">
+                  #{String(pokemon.id).padStart(3, '0')}
+                </p>
+                <h2 className="capitalize text-2xl font-bold text-gray-900">
+                  {pokemon.name}
+                </h2>
+              </div>
+              {hasFemaleSprite && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newGender = gender === 'male' ? 'female' : 'male'
+                    setGender(newGender)
+                    if (onGenderChange && pokemon) {
+                      onGenderChange(pokemon.id, newGender)
+                    }
+                  }}
+                  className={`w-6 h-6 mb-1 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${
+                    gender === 'male'
+                      ? 'bg-blue-500 text-white border-blue-600 shadow-md'
+                      : 'bg-pink-500 text-white border-pink-600 shadow-md'
+                  }`}
+                  title={`Switch to ${gender === 'male' ? 'female' : 'male'}`}
+                >
+                  {gender === 'male' ? '♂' : '♀'}
+                </button>
+              )}
+            </div>
           </div>
-          <DialogClose className="text-gray-900 hover:bg-black/10 rounded p-1 opacity-70 hover:opacity-100 transition-opacity">
+          <DialogClose className="text-gray-900 bg-white rounded p-1 hover:opacity-80 transition-opacity my-auto">
             <XIcon className="h-5 w-5" />
             <span className="sr-only">Close</span>
           </DialogClose>
         </div>
 
-        <div className="px-6 py-6 space-y-6 overflow-y-auto max-h-[calc(90vh-160px)]">
+        <div className="px-6 pb-6 space-y-6 overflow-y-auto max-h-[calc(90vh-160px)]">
           <p className="text-center text-sm text-zinc-600">
             View details, stats, and the evolution path for this Pokémon.
           </p>
@@ -112,31 +149,6 @@ export function PokemonModal({ pokemon, onClose, onOpenEvolution }: Props) {
                   className="h-32 w-32 sm:h-40 sm:w-40"
                 />
               </div>
-
-              {hasFemaleSprite && (
-                <div className="flex justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setGender('male')}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${gender === 'male'
-                      ? 'bg-zinc-900 text-white'
-                      : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-                    }`}
-                  >
-                    ♂ Male
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGender('female')}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${gender === 'female'
-                      ? 'bg-zinc-900 text-white'
-                      : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-                    }`}
-                  >
-                    ♀ Female
-                  </button>
-                </div>
-              )}
 
               <div className="flex flex-wrap gap-2 justify-center">
                 {pokemon.types.map(type => {
@@ -225,11 +237,10 @@ export function PokemonModal({ pokemon, onClose, onOpenEvolution }: Props) {
                     type="button"
                     onClick={() => handleEvolutionClick(evo)}
                     disabled={evo.id === pokemon.id || isOpeningEvolution}
-                    className={`group flex flex-col items-center border-2 rounded-lg p-2 text-center transition ${
-                      evo.id === pokemon.id
+                    className={`group flex flex-col items-center border-2 rounded-lg p-2 text-center transition ${evo.id === pokemon.id
                         ? `${primaryColor.border} ${primaryColor.bg}`
                         : 'border-gray-300 hover:border-blue-500 hover:shadow-md'
-                    } disabled:border-zinc-200 disabled:cursor-default disabled:opacity-50`}
+                      } disabled:border-zinc-200 disabled:cursor-default disabled:opacity-50`}
                   >
                     <img
                       src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${evo.id}.png`}
