@@ -12,30 +12,41 @@ export function PokemonSkeleton({ count = 8 }: PokemonSkeletonProps) {
           key={i}
           className="
             w-full
+            flex flex-col
+            text-left
             rounded-lg
-            border
-            border-zinc-100
-            bg-zinc-100
-            p-3
-            space-y-2
+            border-2
+            border-zinc-200
+            bg-white
+            overflow-hidden
             shadow-sm
           "
         >
-          {/* Image */}
-          <div className="w-full aspect-square overflow-hidden rounded-lg bg-zinc-50">
-            <Skeleton className="h-full w-full rounded-2xl bg-zinc-100 shadow-inner" />
+          {/* Header */}
+          <div className="bg-zinc-100 px-4 py-3">
+            <Skeleton className="h-3 w-10 rounded bg-zinc-200" />
+
+            <div className="flex flex-col gap-2 md:gap-0 md:flex-row items-start justify-between mt-1">
+              <Skeleton className="h-5 w-28 rounded bg-zinc-200" />
+
+              <div className="flex items-center gap-3 md:gap-2">
+                <Skeleton className="h-6 w-6 rounded-full bg-zinc-200" />
+                <Skeleton className="h-6 w-6 rounded-full bg-zinc-200" />
+              </div>
+            </div>
           </div>
 
-          {/* ID + name */}
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-3 w-10 bg-zinc-100" />
-            <Skeleton className="h-4 w-24 bg-zinc-100" />
-          </div>
+          {/* Body */}
+          <div className="flex flex-col p-4 space-y-3 flex-1">
+            <div className="w-full aspect-square flex items-center justify-center">
+              {/* Match PokemonImage sizing */}
+              <Skeleton className="w-40 sm:w-48 md:w-56 aspect-square rounded-xl bg-zinc-200" />
+            </div>
 
-          {/* Types */}
-          <div className="flex gap-2">
-            <Skeleton className="h-5 w-5 rounded-full bg-zinc-100 shadow" />
-            <Skeleton className="h-5 w-5 rounded-full bg-zinc-100 shadow" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-6 w-16 rounded-full bg-zinc-200" />
+              <Skeleton className="h-6 w-20 rounded-full bg-zinc-200" />
+            </div>
           </div>
         </div>
       ))}

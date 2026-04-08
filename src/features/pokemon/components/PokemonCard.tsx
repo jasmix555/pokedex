@@ -64,12 +64,12 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
         <span className={`text-xs font-semibold ${primaryColor.text}`}>
           #{String(pokemon.id).padStart(3, '0')}
         </span>
-        <div className="flex items-center justify-between mt-1">
+        <div className="flex flex-col gap-2 md:gap-0 md:flex-row items-start justify-between mt-1 ">
           <h3 className={`text-lg font-bold capitalize ${primaryColor.text}`}>
             {pokemon.name}
           </h3>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-3 md:gap-2">
             {hasShiny && (
               <button
                 type="button"
@@ -77,11 +77,10 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
                   e.stopPropagation()
                   onShinyChange(!shiny)
                 }}
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition border-2 ${
-                  shiny
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition border-2 ${shiny
                     ? 'bg-yellow-400 border-yellow-500 shadow-md'
                     : 'bg-white/60 border-gray-300'
-                }`}
+                  }`}
                 title={shiny ? 'Shiny on' : 'Shiny off'}
               >
                 ✨
@@ -95,11 +94,10 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
                   e.stopPropagation()
                   onGenderChange(gender === 'male' ? 'female' : 'male')
                 }}
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${
-                  gender === 'male'
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${gender === 'male'
                     ? 'bg-blue-500 text-white border-blue-600 shadow-md'
                     : 'bg-pink-500 text-white border-pink-600 shadow-md'
-                }`}
+                  }`}
                 title={`Switch to ${gender === 'male' ? 'female' : 'male'}`}
               >
                 {gender === 'male' ? '♂' : '♀'}
@@ -110,11 +108,13 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
       </div>
 
       <div className="flex flex-col p-4 space-y-3 flex-1">
-        <PokemonImage
-          src={spriteUrl}
-          alt={pokemon.name}
-          className="w-full aspect-square"
-        />
+        <div className="w-full aspect-square flex items-center justify-center">
+          <PokemonImage
+            src={spriteUrl}
+            alt={pokemon.name}
+            className="w-40 sm:w-48 md:w-56 object-contain"
+          />
+        </div>
 
         <div className="flex flex-wrap gap-2">
           {pokemon.types.map(type => {

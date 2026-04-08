@@ -23,6 +23,11 @@ interface EvolutionNode {
   details: string
 }
 
+interface AltFormNode {
+  id: number
+  name: string
+}
+
 interface Props {
   pokemon: Pokemon | null
   onClose: () => void
@@ -50,28 +55,80 @@ export function PokemonModal({
   const [gender, setGender] = useState<'male' | 'female'>(initialGender)
   const [shiny, setShiny] = useState(initialShiny)
 
+  const [altForms, setAltForms] = useState<AltFormNode[]>([])
+  const [isLoadingAltForms, setIsLoadingAltForms] = useState(false)
+
   useEffect(() => {
     setGender(initialGender)
     setShiny(initialShiny)
   }, [pokemon, initialGender, initialShiny])
 
+  // fetch evolution chain when Pokémon changes
   useEffect(() => {
     if (!pokemon) return
     let cancelled = false
 
-    const pokemonId = pokemon.id
+    const pokemonName = pokemon.name
 
     async function loadEvolution() {
       try {
         setIsLoadingEvo(true)
-        const chain = await fetchPokemonEvolutionChain(pokemonId)
+        setEvolutions([])
+
+        const chain = await fetchPokemonEvolutionChain(pokemonName)
+
         if (!cancelled) setEvolutions(chain)
+      } catch (err) {
+        console.error('Failed to load evolution chain', err)
       } finally {
         if (!cancelled) setIsLoadingEvo(false)
       }
     }
 
     loadEvolution()
+
+    return () => {
+      cancelled = true
+    }
+  }, [pokemon])
+
+  // fetch alt forms when Pokémon changes
+  useEffect(() => {
+    if (!pokemon) return
+    let cancelled = false
+
+    const pokemonName = pokemon.name
+    const speciesKey = pokemonName.split('-')[0]
+
+    async function loadAltForms() {
+      try {
+        setIsLoadingAltForms(true)
+        setAltForms([])
+
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${speciesKey}`)
+        if (!res.ok) return
+
+        const data = await res.json()
+
+        const forms = data.varieties.map((v: any) => {
+          const url: string = v.pokemon.url
+          const id = Number(url.split('/').filter(Boolean).pop())
+
+          return {
+            id,
+            name: v.pokemon.name,
+          }
+        })
+
+        if (!cancelled) setAltForms(forms)
+      } catch (err) {
+        console.error("Failed to load alt forms", err)
+      } finally {
+        if (!cancelled) setIsLoadingAltForms(false)
+      }
+    }
+
+    loadAltForms()
 
     return () => {
       cancelled = true
@@ -143,18 +200,17 @@ export function PokemonModal({
     <Dialog open={!!pokemon} onOpenChange={onClose}>
       <DialogContent
         showCloseButton={false}
-        className="bg-white text-gray-900 border-0 shadow-xl rounded-xl overflow-hidden"
-      >
+        className="bg-white text-gray-900 border-0 shadow-xl rounded-xl overflow-hidden max-w-[95vw] sm:max-w-2xl">
         <DialogTitle className="sr-only">{pokemon.name} Details</DialogTitle>
         <DialogDescription className="sr-only">
           View details, stats, and the evolution path for this Pokémon.
         </DialogDescription>
 
         <div
-          className={`${primaryColor.bg} px-5 py-2 flex items-start justify-between`}
+          className={`${primaryColor.bg} px-3 py-2 sm:px-5 flex items-start justify-between`}
         >
           <div className="flex-1">
-            <div className="flex items-end justify-between mr-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mr-2 sm:mr-4">
               <div>
                 <p className="text-sm font-semibold text-gray-700 mt-1">
                   #{String(pokemon.id).padStart(3, '0')}
@@ -176,8 +232,8 @@ export function PokemonModal({
                       if (onShinyChange) onShinyChange(pokemon.id, newShiny)
                     }}
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition border-2 ${shiny
-                        ? 'bg-yellow-400 border-yellow-500 shadow-md'
-                        : 'bg-white/60 border-gray-300'
+                      ? 'bg-yellow-400 border-yellow-500 shadow-md'
+                      : 'bg-white/60 border-gray-300'
                       }`}
                     title={shiny ? 'Shiny on' : 'Shiny off'}
                   >
@@ -196,8 +252,8 @@ export function PokemonModal({
                       if (onGenderChange) onGenderChange(pokemon.id, newGender)
                     }}
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${gender === 'male'
-                        ? 'bg-blue-500 text-white border-blue-600 shadow-md'
-                        : 'bg-pink-500 text-white border-pink-600 shadow-md'
+                      ? 'bg-blue-500 text-white border-blue-600 shadow-md'
+                      : 'bg-pink-500 text-white border-pink-600 shadow-md'
                       }`}
                     title={`Switch to ${gender === 'male' ? 'female' : 'male'}`}
                   >
@@ -214,12 +270,12 @@ export function PokemonModal({
           </DialogClose>
         </div>
 
-        <div className="px-6 pb-6 space-y-6 overflow-y-auto max-h-[calc(90vh-160px)]">
+        <div className="p-1 space-y-2 md:px-6 md:pb-6 md:space-y-6 overflow-y-auto max-h-[calc(90vh-160px)]">
           <p className="text-center text-sm text-zinc-600">
             View details, stats, and the evolution path for this Pokémon.
           </p>
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <div className="col-span-1 space-y-4">
               <div className="flex justify-center">
                 <PokemonImage
@@ -300,7 +356,7 @@ export function PokemonModal({
             </div>
 
             {isLoadingEvo && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 <Skeleton className="h-20 w-full rounded-lg" />
                 <Skeleton className="h-20 w-full rounded-lg" />
               </div>
@@ -373,6 +429,80 @@ export function PokemonModal({
               <p className="text-xs text-gray-500">
                 This Pokémon does not evolve.
               </p>
+            )}
+          </div>
+
+          <div className="border-t-2 border-gray-200 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-sm font-bold">Alt Forms</h4>
+
+              {isLoadingAltForms && (
+                <span className="inline-flex items-center gap-2 text-xs text-zinc-500">
+                  <span className="inline-block h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-blue-500" />
+                  Loading...
+                </span>
+              )}
+            </div>
+
+            {!isLoadingAltForms && altForms.length <= 1 && (
+              <p className="text-xs text-gray-500">No alternate forms.</p>
+            )}
+
+            {!isLoadingAltForms && altForms.length > 1 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {altForms.map(form => {
+                  const isCurrent = form.id === pokemon.id
+
+                  return (
+                    <button
+                      key={form.id}
+                      type="button"
+                      disabled={isCurrent || isOpeningEvolution}
+                      onClick={async () => {
+                        try {
+                          setIsOpeningEvolution(true)
+
+                          const apiPokemon = await fetchPokemonByName(form.name)
+                          const mapped = mapPokemon(apiPokemon)
+
+                          // ✅ save shiny state for this alt form pokemon
+                          if (onShinyChange) onShinyChange(mapped.id, shiny)
+
+                          // ✅ also save gender state
+                          if (onGenderChange) onGenderChange(mapped.id, gender)
+
+                          // open modal (keeps history)
+                          onOpenEvolution(mapped, gender)
+                        } finally {
+                          setIsOpeningEvolution(false)
+                        }
+                      }}
+                      className={`group flex flex-col items-center border-2 rounded-lg p-2 text-center transition ${isCurrent
+                        ? `${primaryColor.border} ${primaryColor.bg}`
+                        : 'border-gray-300 hover:border-blue-500 hover:shadow-md'} `} >
+                      <img
+                        src={getEvolutionSpriteUrl(form.id)}
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          target.onerror = null
+
+                          if (shiny) {
+                            target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${form.id}.png`
+                          } else {
+                            target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${form.id}.png`
+                          }
+                        }}
+                        className="h-14 w-14"
+                        alt={form.name}
+                      />
+
+                      <span className="mt-2 text-xs font-bold capitalize text-zinc-900">
+                        {form.name}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             )}
           </div>
         </div>

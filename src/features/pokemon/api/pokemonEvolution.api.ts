@@ -53,21 +53,36 @@ function formatEvolutionDetail(detail: any) {
   return parts.join(' • ')
 }
 
-export async function fetchPokemonEvolutionChain(pokemonId: number) {
+export async function fetchPokemonEvolutionChain(pokemonKey: number | string) {
+  // pokemonKey can be "venusaur" or 3 or "deoxys-attack"
+  const key = String(pokemonKey)
+  const speciesKey = key.includes('-') ? key.split('-')[0] : key
+
   const speciesRes = await fetch(
-    `https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`
+    `https://pokeapi.co/api/v2/pokemon-species/${speciesKey}/`
   )
+
+  if (!speciesRes.ok) {
+    throw new Error(`Species not found for: ${speciesKey}`)
+  }
+
   const species = await speciesRes.json()
 
-  const evoRes = await fetch(species.evolution_chain.url)
+  const evoUrl: string | undefined = species?.evolution_chain?.url
+  if (!evoUrl) return []
+
+  const evoRes = await fetch(evoUrl)
+
+  if (!evoRes.ok) {
+    throw new Error(`Evolution chain fetch failed for: ${speciesKey}`)
+  }
+
   const evoData = await evoRes.json()
 
   const chain: { id: number; name: string; details: string }[] = []
 
   function traverse(node: any) {
-    const id = Number(
-      node.species.url.split('/').filter(Boolean).pop()
-    )
+    const id = Number(node.species.url.split('/').filter(Boolean).pop())
 
     const details =
       node.evolution_details?.length
