@@ -45,6 +45,8 @@ export function PokemonModal({
   const [evolutions, setEvolutions] = useState<EvolutionNode[]>([])
   const [isLoadingEvo, setIsLoadingEvo] = useState(false)
   const [isOpeningEvolution, setIsOpeningEvolution] = useState(false)
+
+  // modal-only state
   const [gender, setGender] = useState<'male' | 'female'>(initialGender)
   const [shiny, setShiny] = useState(initialShiny)
 
@@ -57,10 +59,12 @@ export function PokemonModal({
     if (!pokemon) return
     let cancelled = false
 
+    const pokemonId = pokemon.id
+
     async function loadEvolution() {
       try {
         setIsLoadingEvo(true)
-        const chain = await fetchPokemonEvolutionChain(pokemon!.id)
+        const chain = await fetchPokemonEvolutionChain(pokemonId)
         if (!cancelled) setEvolutions(chain)
       } finally {
         if (!cancelled) setIsLoadingEvo(false)
@@ -68,14 +72,36 @@ export function PokemonModal({
     }
 
     loadEvolution()
-    return () => { cancelled = true }
+
+    return () => {
+      cancelled = true
+    }
   }, [pokemon])
+
+  function getEvolutionSpriteUrl(evoId: number) {
+    const base =
+      'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon'
+
+    // female sprites are often missing, so fallback to male/default paths
+    if (gender === 'female') {
+      if (shiny) return `${base}/shiny/female/${evoId}.png`
+      return `${base}/female/${evoId}.png`
+    }
+
+    if (shiny) return `${base}/shiny/${evoId}.png`
+    return `${base}/${evoId}.png`
+  }
 
   async function handleEvolutionClick(evo: EvolutionNode) {
     if (!pokemon || evo.id === pokemon.id) return
+
     try {
       setIsOpeningEvolution(true)
       const apiPokemon = await fetchPokemonByName(String(evo.id))
+
+      // IMPORTANT:
+      // evolution opening inherits the modal's gender state
+      // but shiny is NOT passed (you handle shiny locally per Pokémon anyway)
       onOpenEvolution(mapPokemon(apiPokemon), gender)
     } catch (error) {
       console.error('Failed to open evolution:', error)
@@ -94,23 +120,39 @@ export function PokemonModal({
   const spriteUrl = (() => {
     if (shiny) {
       return gender === 'female'
-        ? pokemon.shinyFemaleSprite ?? pokemon.shinySprite ?? pokemon.sprite ?? pokemon.image
+        ? pokemon.shinyFemaleSprite ??
+        pokemon.shinySprite ??
+        pokemon.sprite ??
+        pokemon.image
         : pokemon.shinySprite ?? pokemon.sprite ?? pokemon.image
     }
+
     return gender === 'female'
       ? pokemon.femaleSprite ?? pokemon.sprite ?? pokemon.image
       : pokemon.sprite ?? pokemon.image
   })()
 
+  const evoTheme =
+    shiny
+      ? 'ring-2 ring-yellow-400/60 bg-yellow-50/60'
+      : gender === 'female'
+        ? 'ring-2 ring-pink-400/50 bg-pink-50/60'
+        : 'ring-2 ring-blue-400/50 bg-blue-50/60'
+
   return (
     <Dialog open={!!pokemon} onOpenChange={onClose}>
-      <DialogContent showCloseButton={false} className="bg-white text-gray-900 border-0 shadow-xl rounded-xl overflow-hidden">
+      <DialogContent
+        showCloseButton={false}
+        className="bg-white text-gray-900 border-0 shadow-xl rounded-xl overflow-hidden"
+      >
         <DialogTitle className="sr-only">{pokemon.name} Details</DialogTitle>
         <DialogDescription className="sr-only">
           View details, stats, and the evolution path for this Pokémon.
         </DialogDescription>
 
-        <div className={`${primaryColor.bg} px-5 py-2 flex items-start justify-between`}>
+        <div
+          className={`${primaryColor.bg} px-5 py-2 flex items-start justify-between`}
+        >
           <div className="flex-1">
             <div className="flex items-end justify-between mr-4">
               <div>
@@ -129,13 +171,14 @@ export function PokemonModal({
                     onClick={() => {
                       const newShiny = !shiny
                       setShiny(newShiny)
-                      if (onShinyChange && pokemon) onShinyChange(pokemon.id, newShiny)
+
+                      // keep your page-level persistence behavior
+                      if (onShinyChange) onShinyChange(pokemon.id, newShiny)
                     }}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition border-2 ${
-                      shiny
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition border-2 ${shiny
                         ? 'bg-yellow-400 border-yellow-500 shadow-md'
                         : 'bg-white/60 border-gray-300'
-                    }`}
+                      }`}
                     title={shiny ? 'Shiny on' : 'Shiny off'}
                   >
                     ✨
@@ -148,13 +191,14 @@ export function PokemonModal({
                     onClick={() => {
                       const newGender = gender === 'male' ? 'female' : 'male'
                       setGender(newGender)
-                      if (onGenderChange && pokemon) onGenderChange(pokemon.id, newGender)
+
+                      // keep your page-level persistence behavior
+                      if (onGenderChange) onGenderChange(pokemon.id, newGender)
                     }}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${
-                      gender === 'male'
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${gender === 'male'
                         ? 'bg-blue-500 text-white border-blue-600 shadow-md'
                         : 'bg-pink-500 text-white border-pink-600 shadow-md'
-                    }`}
+                      }`}
                     title={`Switch to ${gender === 'male' ? 'female' : 'male'}`}
                   >
                     {gender === 'male' ? '♂' : '♀'}
@@ -206,22 +250,34 @@ export function PokemonModal({
               <div className="space-y-2">
                 {pokemon.stats.map(stat => {
                   const statColor =
-                    stat.value >= 100 ? 'bg-green-500'
-                    : stat.value >= 75 ? 'bg-blue-500'
-                    : stat.value >= 50 ? 'bg-yellow-500'
-                    : 'bg-red-500'
+                    stat.value >= 100
+                      ? 'bg-green-500'
+                      : stat.value >= 75
+                        ? 'bg-blue-500'
+                        : stat.value >= 50
+                          ? 'bg-yellow-500'
+                          : 'bg-red-500'
+
                   return (
                     <div key={stat.name}>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="capitalize font-semibold text-gray-700">
                           {stat.name.replace('-', ' ')}
                         </span>
-                        <span className="font-bold text-gray-900">{stat.value}</span>
+                        <span className="font-bold text-gray-900">
+                          {stat.value}
+                        </span>
                       </div>
+
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className={`h-full ${statColor} rounded-full transition-all`}
-                          style={{ width: `${Math.min((stat.value / 255) * 100, 100)}%` }}
+                          style={{
+                            width: `${Math.min(
+                              (stat.value / 255) * 100,
+                              100
+                            )}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -234,6 +290,7 @@ export function PokemonModal({
           <div className="border-t-2 border-gray-200 pt-4">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <h4 className="text-sm font-bold">Evolution</h4>
+
               {isLoadingEvo && (
                 <span className="inline-flex items-center gap-2 text-xs text-zinc-500">
                   <span className="inline-block h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-blue-500" />
@@ -251,41 +308,71 @@ export function PokemonModal({
 
             {!isLoadingEvo && evolutions.length > 1 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {evolutions.map(evo => (
-                  <button
-                    key={evo.id}
-                    type="button"
-                    onClick={() => handleEvolutionClick(evo)}
-                    disabled={evo.id === pokemon.id || isOpeningEvolution}
-                    className={`group flex flex-col items-center border-2 rounded-lg p-2 text-center transition ${
-                      evo.id === pokemon.id
-                        ? `${primaryColor.border} ${primaryColor.bg}`
-                        : 'border-gray-300 hover:border-blue-500 hover:shadow-md'
-                    } disabled:border-zinc-200 disabled:cursor-default disabled:opacity-50`}
-                  >
-                    <img
-                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${evo.id}.png`}
-                      className="h-14 w-14"
-                      alt={evo.name}
-                    />
-                    <span className="mt-2 text-xs font-bold capitalize text-zinc-900">{evo.name}</span>
-                    <span className="mt-1 text-[9px] text-zinc-600 text-center leading-tight">{evo.details}</span>
-                    {evo.id === pokemon.id && (
-                      <span className="mt-2 rounded-full bg-green-500 text-white px-2 py-0.5 text-[9px] font-bold">
-                        Current
+                {evolutions.map(evo => {
+                  const isCurrent = evo.id === pokemon.id
+
+                  return (
+                    <button
+                      key={evo.id}
+                      type="button"
+                      onClick={() => handleEvolutionClick(evo)}
+                      disabled={isCurrent || isOpeningEvolution}
+                      className={`group flex flex-col items-center border-2 rounded-lg p-2 text-center transition
+                        ${!isCurrent ? evoTheme : ''}
+                        ${isCurrent
+                          ? `${primaryColor.border} ${primaryColor.bg}`
+                          : 'border-gray-300 hover:border-blue-500 hover:shadow-md'
+                        }
+                        disabled:border-zinc-200 disabled:cursor-default disabled:opacity-50
+                      `}
+                    >
+                      <img
+                        src={getEvolutionSpriteUrl(evo.id)}
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          target.onerror = null
+
+                          // fallback priority:
+                          // female shiny -> shiny -> normal
+                          if (shiny) {
+                            target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${evo.id}.png`
+                          } else {
+                            target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${evo.id}.png`
+                          }
+                        }}
+                        className="h-14 w-14"
+                        alt={evo.name}
+                      />
+
+                      <span className="mt-2 text-xs font-bold capitalize text-zinc-900">
+                        {evo.name}
                       </span>
-                    )}
-                  </button>
-                ))}
+
+                      <span className="mt-1 text-[9px] text-zinc-600 text-center leading-tight">
+                        {evo.details}
+                      </span>
+
+                      {isCurrent && (
+                        <span className="mt-2 rounded-full bg-green-500 text-white px-2 py-0.5 text-[9px] font-bold">
+                          Current
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             )}
 
             {isOpeningEvolution && (
-              <p className="text-xs text-gray-500">Opening selected Pokémon...</p>
+              <p className="text-xs text-gray-500">
+                Opening selected Pokémon...
+              </p>
             )}
 
             {!isLoadingEvo && evolutions.length <= 1 && (
-              <p className="text-xs text-gray-500">This Pokémon does not evolve.</p>
+              <p className="text-xs text-gray-500">
+                This Pokémon does not evolve.
+              </p>
             )}
           </div>
         </div>
