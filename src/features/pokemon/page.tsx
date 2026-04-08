@@ -29,15 +29,19 @@ export default function PokedexPage() {
   const [modalStack, setModalStack] = useState<Pokemon[]>([])
   const [generation, setGeneration] = useState<GenerationKey>('all')
   const [pokemonGenders, setPokemonGenders] = useState<Map<number, 'male' | 'female'>>(new Map())
+  const [pokemonShinies, setPokemonShinies] = useState<Map<number, boolean>>(new Map())
 
   const selectedPokemon = modalStack.length > 0 ? modalStack[modalStack.length - 1] : null
   const modalGender = selectedPokemon ? pokemonGenders.get(selectedPokemon.id) || 'male' : 'male'
+  const modalShiny = selectedPokemon ? pokemonShinies.get(selectedPokemon.id) ?? false : false
+
+  const handleShinyChange = useCallback((pokemonId: number, shiny: boolean) => {
+    setPokemonShinies(prev => new Map(prev).set(pokemonId, shiny))
+  }, [])
 
   const openPokemonModal = (pokemon: Pokemon, gender: 'male' | 'female', keepHistory = false) => {
     setPokemonGenders(prev => new Map(prev.set(pokemon.id, gender)))
-    setModalStack(prev =>
-      keepHistory ? [...prev, pokemon] : [pokemon]
-    )
+    setModalStack(prev => keepHistory ? [...prev, pokemon] : [pokemon])
   }
 
   const closePokemonModal = () => {
@@ -64,7 +68,7 @@ export default function PokedexPage() {
     if (isSearching) {
       // Filter search results by current generation
       if (!range) return searchResults
-      
+
       const [min, max] = range
       return searchResults.filter(p => p.id >= min && p.id <= max)
     }
@@ -78,24 +82,24 @@ export default function PokedexPage() {
   // Results outside current generation with their generation info
   const similarFinds = (() => {
     if (!isSearching || generation === 'all') return []
-    
+
     const range = GENERATIONS[generation].range
     if (!range) return []
-    
+
     const [min, max] = range
     const outside = searchResults.filter(p => p.id < min || p.id > max)
-    
+
     // Map each Pokémon to its generation
     return outside.map(pokemon => {
       let foundGen: typeof GENERATIONS[keyof typeof GENERATIONS] | null = null
-      
+
       for (const [, gen] of Object.entries(GENERATIONS)) {
         if (gen.range && pokemon.id >= gen.range[0] && pokemon.id <= gen.range[1]) {
           foundGen = gen
           break
         }
       }
-      
+
       return {
         pokemon,
         generationLabel: foundGen?.label || 'Unknown',
@@ -189,6 +193,8 @@ export default function PokedexPage() {
         onSelect={(pokemon: Pokemon, gender: 'male' | 'female') => openPokemonModal(pokemon, gender)}
         pokemonGenders={pokemonGenders}
         onGenderChange={updatePokemonGender}
+        pokemonShinies={pokemonShinies}
+        onShinyChange={handleShinyChange}
         similarFinds={similarFinds}
         currentGen={GENERATIONS[generation].label}
         similarNames={similarNames}
@@ -201,6 +207,8 @@ export default function PokedexPage() {
         onOpenEvolution={(pokemon: Pokemon, gender: 'male' | 'female') => openPokemonModal(pokemon, gender, true)}
         initialGender={modalGender}
         onGenderChange={updatePokemonGender}
+        initialShiny={modalShiny}
+        onShinyChange={handleShinyChange}
       />
 
       {/* Infinite scroll sentinel */}

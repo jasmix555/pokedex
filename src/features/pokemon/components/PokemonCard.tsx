@@ -9,16 +9,26 @@ interface Props {
   onClick: (pokemon: Pokemon, gender: 'male' | 'female') => void
   gender: 'male' | 'female'
   onGenderChange: (gender: 'male' | 'female') => void
+  shiny: boolean
+  onShinyChange: (shiny: boolean) => void
 }
 
-export function PokemonCard({ pokemon, onClick, gender, onGenderChange }: Props) {
+export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, onShinyChange }: Props) {
   const primaryType = pokemon.types[0]
   const primaryColor = getTypeColor(primaryType)
   const hasFemaleSprite = Boolean(pokemon.femaleSprite)
-  const spriteUrl =
-    gender === 'female'
+  const hasShiny = Boolean(pokemon.shinySprite)
+
+  const spriteUrl = (() => {
+    if (shiny) {
+      return gender === 'female'
+        ? pokemon.shinyFemaleSprite ?? pokemon.shinySprite ?? pokemon.sprite ?? pokemon.image
+        : pokemon.shinySprite ?? pokemon.sprite ?? pokemon.image
+    }
+    return gender === 'female'
       ? pokemon.femaleSprite ?? pokemon.sprite ?? pokemon.image
       : pokemon.sprite ?? pokemon.image
+  })()
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -51,30 +61,51 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange }: Props)
       `}
     >
       <div className={`${primaryColor.bg} px-4 py-3`}>
-        <span className="text-xs font-bold text-gray-700">
+        <span className={`text-xs font-semibold ${primaryColor.text}`}>
           #{String(pokemon.id).padStart(3, '0')}
         </span>
         <div className="flex items-center justify-between mt-1">
-          <h3 className="text-lg font-bold capitalize text-gray-900">
+          <h3 className={`text-lg font-bold capitalize ${primaryColor.text}`}>
             {pokemon.name}
           </h3>
-          {hasFemaleSprite && (
-            <button
-              type="button"
-              onClick={event => {
-                event.stopPropagation()
-                onGenderChange(gender === 'male' ? 'female' : 'male')
-              }}
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${
-                gender === 'male'
-                  ? 'bg-blue-500 text-white border-blue-600 shadow-md'
-                  : 'bg-pink-500 text-white border-pink-600 shadow-md'
-              }`}
-              title={`Switch to ${gender === 'male' ? 'female' : 'male'}`}
-            >
-              {gender === 'male' ? '♂' : '♀'}
-            </button>
-          )}
+
+          <div className="flex items-center gap-1">
+            {hasShiny && (
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation()
+                  onShinyChange(!shiny)
+                }}
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition border-2 ${
+                  shiny
+                    ? 'bg-yellow-400 border-yellow-500 shadow-md'
+                    : 'bg-white/60 border-gray-300'
+                }`}
+                title={shiny ? 'Shiny on' : 'Shiny off'}
+              >
+                ✨
+              </button>
+            )}
+
+            {hasFemaleSprite && (
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation()
+                  onGenderChange(gender === 'male' ? 'female' : 'male')
+                }}
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${
+                  gender === 'male'
+                    ? 'bg-blue-500 text-white border-blue-600 shadow-md'
+                    : 'bg-pink-500 text-white border-pink-600 shadow-md'
+                }`}
+                title={`Switch to ${gender === 'male' ? 'female' : 'male'}`}
+              >
+                {gender === 'male' ? '♂' : '♀'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -92,7 +123,7 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange }: Props)
               <span
                 key={type}
                 className={`
-                  inline-flex items-center gap-1 
+                  inline-flex items-center gap-1
                   ${color.bg}
                   ${color.text}
                   px-2.5 py-1 rounded-full text-xs font-semibold

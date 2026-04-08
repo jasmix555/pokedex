@@ -8,6 +8,8 @@ interface Props {
   onSelect: (pokemon: Pokemon, gender: 'male' | 'female') => void
   pokemonGenders: Map<number, 'male' | 'female'>
   onGenderChange: (pokemonId: number, gender: 'male' | 'female') => void
+  pokemonShinies: Map<number, boolean>                          // add
+  onShinyChange: (pokemonId: number, shiny: boolean) => void   // add
   similarFinds?: { pokemon: Pokemon; generationLabel: string }[]
   currentGen?: string
   similarNames?: string[]
@@ -20,14 +22,13 @@ export function PokemonGrid({
   onSelect,
   pokemonGenders,
   onGenderChange,
+  pokemonShinies,       // add
+  onShinyChange,        // add
   similarFinds = [],
   currentGen,
   similarNames = [],
   searchQuery = '',
 }: Props) {
-  /* ----------------------------------------
-   * Loading with no data (initial / search)
-   * ---------------------------------------- */
   if (isLoading && pokemon.length === 0) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -36,7 +37,6 @@ export function PokemonGrid({
     )
   }
 
-  // Show "not found" message when searching but no results in current gen
   if (!isLoading && pokemon.length === 0 && similarFinds.length > 0) {
     return (
       <div className="mt-8 space-y-6">
@@ -54,12 +54,12 @@ export function PokemonGrid({
                 <PokemonCard
                   pokemon={p}
                   onClick={onSelect}
-                  gender={pokemonGenders.get(p.id) || 'male'}
-                  onGenderChange={(gender) => onGenderChange(p.id, gender)}
+                  gender={pokemonGenders.get(p.id) ?? 'male'}
+                  onGenderChange={gender => onGenderChange(p.id, gender)}
+                  shiny={pokemonShinies.get(p.id) ?? false}        // add
+                  onShinyChange={shiny => onShinyChange(p.id, shiny)} // add
                 />
-                <p className="text-xs text-center text-zinc-500">
-                  {generationLabel}
-                </p>
+                <p className="text-xs text-center text-zinc-500">{generationLabel}</p>
               </div>
             ))}
           </div>
@@ -68,7 +68,6 @@ export function PokemonGrid({
     )
   }
 
-  // Show "not found anywhere" message when searching but no matches exist
   if (!isLoading && pokemon.length === 0) {
     return (
       <div className="mt-8 space-y-4">
@@ -80,9 +79,7 @@ export function PokemonGrid({
 
         {similarNames.length > 0 && (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p className="text-sm font-medium text-blue-900 mb-2">
-              Did you mean:
-            </p>
+            <p className="text-sm font-medium text-blue-900 mb-2">Did you mean:</p>
             <ul className="space-y-1">
               {similarNames.map(name => (
                 <li key={name} className="text-sm text-blue-800 capitalize">
@@ -104,14 +101,13 @@ export function PokemonGrid({
             key={p.id}
             pokemon={p}
             onClick={onSelect}
-            gender={pokemonGenders.get(p.id) || 'male'}
-            onGenderChange={(gender) => onGenderChange(p.id, gender)}
+            gender={pokemonGenders.get(p.id) ?? 'male'}
+            onGenderChange={gender => onGenderChange(p.id, gender)}
+            shiny={pokemonShinies.get(p.id) ?? false}              // add
+            onShinyChange={shiny => onShinyChange(p.id, shiny)}    // add
           />
         ))}
 
-        {/* ----------------------------------------
-         * Infinite scroll append loading
-         * ---------------------------------------- */}
         {isLoading && <PokemonSkeleton count={4} />}
       </div>
 
@@ -122,7 +118,6 @@ export function PokemonGrid({
         </div>
       )}
 
-      {/* Similar Finds Section */}
       {similarFinds.length > 0 && pokemon.length > 0 && (
         <div className="mt-8 space-y-4">
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
@@ -136,12 +131,12 @@ export function PokemonGrid({
                 <PokemonCard
                   pokemon={p}
                   onClick={onSelect}
-                  gender={pokemonGenders.get(p.id) || 'male'}
-                  onGenderChange={(gender) => onGenderChange(p.id, gender)}
+                  gender={pokemonGenders.get(p.id) ?? 'male'}
+                  onGenderChange={gender => onGenderChange(p.id, gender)}
+                  shiny={pokemonShinies.get(p.id) ?? false}          // add
+                  onShinyChange={shiny => onShinyChange(p.id, shiny)} // add
                 />
-                <p className="text-xs text-center text-zinc-500">
-                  {generationLabel}
-                </p>
+                <p className="text-xs text-center text-zinc-500">{generationLabel}</p>
               </div>
             ))}
           </div>

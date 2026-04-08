@@ -35,9 +35,10 @@ export interface Pokemon {
   image: string
   sprite?: string
   femaleSprite?: string | null
+  shinySprite?: string | null       // add
+  shinyFemaleSprite?: string | null // add
   types: PokemonType[]
   stats: PokemonStat[]
-
   evolvesFrom?: EvolutionNode | null
   evolutions?: EvolutionNode[]
 }
