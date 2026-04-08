@@ -276,12 +276,12 @@ export function PokemonModal({
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <div className="col-span-1 space-y-4">
+            <div className="col-span-1 space-y-4 flex flex-col items-center justify-end">
               <div className="flex justify-center">
                 <PokemonImage
                   src={spriteUrl}
                   alt={pokemon.name}
-                  className="h-32 w-32 sm:h-40 sm:w-40"
+                  className="h-40 bg-zinc-800/10 rounded-xl object-contain"
                 />
               </div>
 
@@ -302,7 +302,6 @@ export function PokemonModal({
             </div>
 
             <div className="col-span-1 lg:col-span-2">
-              <h4 className="text-sm font-bold text-gray-900 mb-3">Stats</h4>
               <div className="space-y-2">
                 {pokemon.stats.map(stat => {
                   const statColor =
@@ -382,22 +381,10 @@ export function PokemonModal({
                         disabled:border-zinc-200 disabled:cursor-default disabled:opacity-50
                       `}
                     >
-                      <img
+                      <PokemonImage
                         src={getEvolutionSpriteUrl(evo.id)}
-                        onError={(e) => {
-                          const target = e.currentTarget
-                          target.onerror = null
-
-                          // fallback priority:
-                          // female shiny -> shiny -> normal
-                          if (shiny) {
-                            target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${evo.id}.png`
-                          } else {
-                            target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${evo.id}.png`
-                          }
-                        }}
-                        className="h-14 w-14"
                         alt={evo.name}
+                        className="h-14 w-14"
                       />
 
                       <span className="mt-2 text-xs font-bold capitalize text-zinc-900">
@@ -480,20 +467,10 @@ export function PokemonModal({
                       className={`group flex flex-col items-center border-2 rounded-lg p-2 text-center transition ${isCurrent
                         ? `${primaryColor.border} ${primaryColor.bg}`
                         : 'border-gray-300 hover:border-blue-500 hover:shadow-md'} `} >
-                      <img
+                      <PokemonImage
                         src={getEvolutionSpriteUrl(form.id)}
-                        onError={(e) => {
-                          const target = e.currentTarget
-                          target.onerror = null
-
-                          if (shiny) {
-                            target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${form.id}.png`
-                          } else {
-                            target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${form.id}.png`
-                          }
-                        }}
-                        className="h-14 w-14"
                         alt={form.name}
+                        className="h-14 w-14"
                       />
 
                       <span className="mt-2 text-xs font-bold capitalize text-zinc-900">

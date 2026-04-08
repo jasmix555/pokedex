@@ -12,6 +12,7 @@ import { PokemonFilter } from './components/PokemonFilter'
 
 import { Pokemon } from './types/pokemon.types'
 import { GENERATIONS, GenerationKey } from '@/constants/generations'
+import { ScrollToTopButton } from '@/components/ScrollToTopButton'
 
 export default function PokedexPage() {
   /* ----------------------------------------
@@ -135,11 +136,12 @@ export default function PokedexPage() {
    * ---------------------------------------- */
   const isGenLoading = !isSearching && !genIsFullyReached
 
-  const isGridLoading = showInitialSkeleton
-    ? true
-    : isSearching
-      ? isSearchLoading && searchResults.length === 0
-      : (isListLoading && pokemon.length === 0) || isGenLoading
+  const isGridLoading =
+    pokemon.length === 0
+      ? true
+      : isSearching
+        ? isSearchLoading && searchResults.length === 0
+        : isGenLoading
 
   /* ----------------------------------------
    * Infinite scroll (browse mode only)
@@ -229,6 +231,9 @@ export default function PokedexPage() {
       {!isSearching && hasMore && !isGenLoading && (
         <div ref={sentinelRef} aria-hidden className="h-1" />
       )}
+
+
+      <ScrollToTopButton/>
     </div>
   )
 }

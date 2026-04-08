@@ -112,7 +112,7 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
           <PokemonImage
             src={spriteUrl}
             alt={pokemon.name}
-            className="w-40 sm:w-48 md:w-56 object-contain"
+            className="w-56 object-contain bg-zinc-800/10 rounded-xl"
           />
         </div>
 
