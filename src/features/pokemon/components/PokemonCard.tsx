@@ -1,8 +1,11 @@
+// components/PokemonCard.tsx
 import { KeyboardEvent } from 'react'
 import { Pokemon } from '../types/pokemon.types'
 import { getTypeIcon } from '../utils/typeIcon'
 import { getTypeColor } from '../utils/typeColor'
 import { PokemonImage } from './PokemonImage'
+import { ShinyButton } from './ShinyButton'
+import { GenderButton } from './GenderButton'
 
 interface Props {
   pokemon: Pokemon
@@ -44,64 +47,29 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
       onClick={() => onClick(pokemon, gender)}
       onKeyDown={handleKeyDown}
       className={`
-        w-full
-        flex flex-col
-        text-left
-        rounded-lg
-        border-2
-        ${primaryColor.border}
-        bg-white
-        overflow-hidden
-        hover:shadow-lg
-        transition
-        hover:scale-105
-        focus-visible:outline-none
-        focus-visible:ring-2
-        focus-visible:ring-blue-500
+        w-full flex flex-col text-left rounded-lg border-2
+        ${primaryColor.border} bg-white overflow-hidden
+        hover:shadow-lg transition hover:scale-105
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
       `}
     >
       <div className={`${primaryColor.bg} px-4 py-3`}>
         <span className={`text-xs font-semibold ${primaryColor.text}`}>
           #{String(pokemon.id).padStart(3, '0')}
         </span>
-        <div className="flex flex-col gap-2 md:gap-0 md:flex-row items-start justify-between mt-1 ">
-          <h3 className={`text-lg font-bold capitalize ${primaryColor.text}`}>
+
+        {/* Fix: use items-center always, no column flip */}
+        <div className="flex items-center justify-between mt-1 gap-2">
+          <h3 className={`text-lg font-bold capitalize leading-tight ${primaryColor.text}`}>
             {pokemon.name}
           </h3>
 
-          <div className="flex items-center gap-3 md:gap-2">
+          <div className="flex items-center gap-1 shrink-0">
             {hasShiny && (
-              <button
-                type="button"
-                onClick={e => {
-                  e.stopPropagation()
-                  onShinyChange(!shiny)
-                }}
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition border-2 ${shiny
-                    ? 'bg-yellow-400 border-yellow-500 shadow-md'
-                    : 'bg-white/60 border-gray-300'
-                  }`}
-                title={shiny ? 'Shiny on' : 'Shiny off'}
-              >
-                ✨
-              </button>
+              <ShinyButton shiny={shiny} onShinyChange={onShinyChange} />
             )}
-
             {hasFemaleSprite && (
-              <button
-                type="button"
-                onClick={e => {
-                  e.stopPropagation()
-                  onGenderChange(gender === 'male' ? 'female' : 'male')
-                }}
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition border-2 ${gender === 'male'
-                    ? 'bg-blue-500 text-white border-blue-600 shadow-md'
-                    : 'bg-pink-500 text-white border-pink-600 shadow-md'
-                  }`}
-                title={`Switch to ${gender === 'male' ? 'female' : 'male'}`}
-              >
-                {gender === 'male' ? '♂' : '♀'}
-              </button>
+              <GenderButton gender={gender} onGenderChange={onGenderChange} />
             )}
           </div>
         </div>
@@ -124,8 +92,7 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
                 key={type}
                 className={`
                   inline-flex items-center gap-1
-                  ${color.bg}
-                  ${color.text}
+                  ${color.bg} ${color.text}
                   px-2.5 py-1 rounded-full text-xs font-semibold
                 `}
               >
