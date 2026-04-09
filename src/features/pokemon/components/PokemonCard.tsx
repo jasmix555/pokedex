@@ -1,11 +1,10 @@
-// components/PokemonCard.tsx
 import { KeyboardEvent } from 'react'
 import { Pokemon } from '../types/pokemon.types'
-import { getTypeIcon } from '../utils/typeIcon'
 import { getTypeColor } from '../utils/typeColor'
 import { PokemonImage } from './PokemonImage'
 import { ShinyButton } from './ShinyButton'
 import { GenderButton } from './GenderButton'
+import { TypeBadge } from './TypeBadge'
 
 interface Props {
   pokemon: Pokemon
@@ -48,7 +47,7 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
       onKeyDown={handleKeyDown}
       className={`
         w-full flex flex-col text-left rounded-lg border-2
-        ${primaryColor.border} bg-white overflow-hidden
+        ${primaryColor.border} bg-white
         hover:shadow-lg transition hover:scale-105
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
       `}
@@ -58,7 +57,6 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
           #{String(pokemon.id).padStart(3, '0')}
         </span>
 
-        {/* Fix: use items-center always, no column flip */}
         <div className="flex items-center justify-between mt-1 gap-2">
           <h3 className={`text-lg font-bold capitalize leading-tight ${primaryColor.text}`}>
             {pokemon.name}
@@ -84,23 +82,13 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {pokemon.types.map(type => {
-            const color = getTypeColor(type)
-            return (
-              <span
-                key={type}
-                className={`
-                  inline-flex items-center gap-1
-                  ${color.bg} ${color.text}
-                  px-2.5 py-1 rounded-full text-xs font-semibold
-                `}
-              >
-                <img src={getTypeIcon(type)} alt={type} className="h-3.5 w-3.5" />
-                {type}
-              </span>
-            )
-          })}
+        <div
+          className="flex flex-wrap gap-2"
+          onClick={e => e.stopPropagation()}
+        >
+          {pokemon.types.map(type => (
+            <TypeBadge key={type} type={type} allTypes={pokemon.types} />
+          ))}
         </div>
       </div>
     </div>

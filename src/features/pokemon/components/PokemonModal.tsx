@@ -10,7 +10,6 @@ import { XIcon } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { Pokemon } from '../types/pokemon.types'
-import { getTypeIcon } from '../utils/typeIcon'
 import { getTypeColor } from '../utils/typeColor'
 import { fetchPokemonEvolutionChain } from '../api/pokemonEvolution.api'
 import { fetchPokemonByName } from '../api/pokemon.api'
@@ -18,6 +17,7 @@ import { mapPokemon } from '../utils/mapPokemon'
 import { PokemonImage } from './PokemonImage'
 import { ShinyButton } from './ShinyButton'
 import { GenderButton } from './GenderButton'
+import { TypeBadge } from './TypeBadge'
 
 interface EvolutionNode {
   id: number
@@ -209,35 +209,26 @@ export function PokemonModal({
         </div>
 
         <div className="p-1 space-y-2 md:px-6 md:pb-6 md:space-y-6 overflow-y-auto max-h-[calc(90vh-160px)]">
-          <p className="text-center text-sm text-zinc-600">
-            View details, stats, and the evolution path for this Pokémon.
-          </p>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+
+            {/* Image + types */}
             <div className="col-span-1 space-y-4 flex flex-col items-center justify-end">
               <div className="flex justify-center">
                 <PokemonImage
                   src={spriteUrl}
                   alt={pokemon.name}
-                  className="w-40 bg-zinc-800/10 rounded-xl object-contain"
+                  className="h-40 bg-zinc-800/10 rounded-xl object-contain"
                 />
               </div>
+
               <div className="flex flex-wrap gap-2 justify-center">
-                {pokemon.types.map(type => {
-                  const color = getTypeColor(type)
-                  return (
-                    <div
-                      key={type}
-                      className={`flex items-center gap-1.5 rounded-full ${color.bg} ${color.text} px-3 py-1 text-xs font-semibold`}
-                    >
-                      <img src={getTypeIcon(type)} className="h-4 w-4" />
-                      <span className="capitalize">{type}</span>
-                    </div>
-                  )
-                })}
+                {pokemon.types.map(type => (
+                  <TypeBadge key={type} type={type} allTypes={pokemon.types} />
+                ))}
               </div>
             </div>
 
+            {/* Stats */}
             <div className="col-span-1 lg:col-span-2 space-y-2">
               {pokemon.stats.map(stat => {
                 const statColor =
@@ -303,7 +294,11 @@ export function PokemonModal({
                         disabled:border-zinc-200 disabled:cursor-default disabled:opacity-50
                       `}
                     >
-                      <PokemonImage src={getEvolutionSpriteUrl(evo.id)} alt={evo.name} className="h-14 w-14" />
+                      <PokemonImage
+                        src={getEvolutionSpriteUrl(evo.id)}
+                        alt={evo.name}
+                        className="h-14 w-14"
+                      />
                       <span className="mt-2 text-xs font-bold capitalize text-zinc-900">{evo.name}</span>
                       <span className="mt-1 text-[9px] text-zinc-600 text-center leading-tight">{evo.details}</span>
                       {isCurrent && (
@@ -370,7 +365,11 @@ export function PokemonModal({
                         }
                       `}
                     >
-                      <PokemonImage src={getEvolutionSpriteUrl(form.id)} alt={form.name} className="h-14 w-14" />
+                      <PokemonImage
+                        src={getEvolutionSpriteUrl(form.id)}
+                        alt={form.name}
+                        className="h-14 w-14"
+                      />
                       <span className="mt-2 text-xs font-bold capitalize text-zinc-900">{form.name}</span>
                     </button>
                   )
