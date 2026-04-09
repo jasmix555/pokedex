@@ -30,8 +30,12 @@ export function PokemonImage({ src, alt, className, pokemonId }: PokemonImagePro
     <div className={`relative overflow-hidden rounded-xl ${className}`}>
       {currentSrc ? (
         <img
+          key={currentSrc}
           src={currentSrc}
           alt={alt}
+          loading="eager"
+          decoding="async"
+          draggable={false}
           className={`h-full w-full object-contain transition-opacity duration-300 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
@@ -42,8 +46,6 @@ export function PokemonImage({ src, alt, className, pokemonId }: PokemonImagePro
               setIndex(prev => prev + 1)
             }
           }}
-          loading="lazy"
-          draggable={false}
         />
       ) : null}
 
