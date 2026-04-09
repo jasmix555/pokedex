@@ -31,7 +31,6 @@ export default function PokedexPage() {
   const [generation, setGeneration] = useState<GenerationKey>('all')
   const [pokemonGenders, setPokemonGenders] = useState<Map<number, 'male' | 'female'>>(new Map())
   const [pokemonShinies, setPokemonShinies] = useState<Map<number, boolean>>(new Map())
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true)
 
   const selectedPokemon = modalStack.length > 0 ? modalStack[modalStack.length - 1] : null
   const modalGender = selectedPokemon ? pokemonGenders.get(selectedPokemon.id) || 'male' : 'male'
@@ -165,17 +164,6 @@ export default function PokedexPage() {
     return () => observer.disconnect()
   }, [isSearching, isListLoading, loadMore])
 
-  useEffect(() => {
-    // only wait once, when first pokemon batch arrives
-    if (pokemon.length === 0) return
-
-    const timer = setTimeout(() => {
-      setShowInitialSkeleton(false)
-    }, 800) // change delay (ms) here
-
-    return () => clearTimeout(timer)
-  }, [pokemon.length])
-
   /* ----------------------------------------
    * Error state
    * ---------------------------------------- */
@@ -195,7 +183,6 @@ export default function PokedexPage() {
       <header className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">Pokédex</h1>
-          <p className="text-muted-foreground">Browse</p>
         </div>
       </header>
 

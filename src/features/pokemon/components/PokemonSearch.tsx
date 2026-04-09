@@ -8,6 +8,9 @@ interface PokemonSearchProps {
 export function PokemonSearch({ value, onChange }: PokemonSearchProps) {
   return (
     <div className="relative max-w-sm">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Browse
+      </label>
       <Input
         placeholder="Search Pokémon by name…"
         value={value}
