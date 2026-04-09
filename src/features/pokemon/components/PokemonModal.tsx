@@ -40,6 +40,14 @@ interface Props {
   onShinyChange?: (pokemonId: number, shiny: boolean) => void
 }
 
+function getEvolutionSpriteUrl(evoId: number, shiny: boolean, gender: 'male' | 'female'): string {
+  const base = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon'
+  if (shiny && gender === 'female') return `${base}/shiny/female/${evoId}.png`
+  if (shiny) return `${base}/shiny/${evoId}.png`
+  if (gender === 'female') return `${base}/female/${evoId}.png`
+  return `${base}/${evoId}.png`
+}
+
 export function PokemonModal({
   pokemon,
   onClose,
@@ -112,20 +120,14 @@ export function PokemonModal({
     return () => { cancelled = true }
   }, [pokemon])
 
-  function getEvolutionSpriteUrl(evoId: number) {
-    const base = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon'
-    if (gender === 'female') {
-      return shiny ? `${base}/shiny/female/${evoId}.png` : `${base}/female/${evoId}.png`
-    }
-    return shiny ? `${base}/shiny/${evoId}.png` : `${base}/${evoId}.png`
-  }
-
   async function handleEvolutionClick(evo: EvolutionNode) {
     if (!pokemon || evo.id === pokemon.id) return
     try {
       setIsOpeningEvolution(true)
       const apiPokemon = await fetchPokemonByName(String(evo.id))
-      onOpenEvolution(mapPokemon(apiPokemon), gender)
+      const mapped = mapPokemon(apiPokemon)
+      const targetGender = mapped.femaleSprite ? gender : 'male'
+      onOpenEvolution(mapped, targetGender)
     } catch (error) {
       console.error('Failed to open evolution:', error)
     } finally {
@@ -172,10 +174,10 @@ export function PokemonModal({
         <div className={`${primaryColor.bg} px-3 py-2 sm:px-5 flex items-center justify-between gap-2`}>
           <div className="flex-1 flex items-center justify-between gap-2 mr-2">
             <div>
-              <p className={`text-sm font-semibold ${primaryColor.text}`}>
+              <p className="text-sm font-semibold text-gray-700">
                 #{String(pokemon.id).padStart(3, '0')}
               </p>
-              <h2 className={`capitalize text-2xl font-bold ${primaryColor.text} leading-tight`}>
+              <h2 className="capitalize text-2xl font-bold text-gray-900 leading-tight">
                 {pokemon.name}
               </h2>
             </div>
@@ -234,9 +236,9 @@ export function PokemonModal({
               {pokemon.stats.map(stat => {
                 const statColor =
                   stat.value >= 100 ? 'bg-green-500'
-                    : stat.value >= 75 ? 'bg-blue-500'
-                      : stat.value >= 50 ? 'bg-yellow-500'
-                        : 'bg-red-500'
+                  : stat.value >= 75 ? 'bg-blue-500'
+                  : stat.value >= 50 ? 'bg-yellow-500'
+                  : 'bg-red-500'
                 return (
                   <div key={stat.name}>
                     <div className="flex justify-between text-xs mb-1">
@@ -296,7 +298,7 @@ export function PokemonModal({
                       `}
                     >
                       <PokemonImage
-                        src={getEvolutionSpriteUrl(evo.id)}
+                        src={getEvolutionSpriteUrl(evo.id, shiny, gender)}
                         alt={evo.name}
                         className="h-14 w-14"
                         pokemonId={evo.id}
@@ -353,9 +355,10 @@ export function PokemonModal({
                           setIsOpeningEvolution(true)
                           const apiPokemon = await fetchPokemonByName(form.name)
                           const mapped = mapPokemon(apiPokemon)
+                          const targetGender = mapped.femaleSprite ? gender : 'male'
                           onShinyChange?.(mapped.id, shiny)
-                          onGenderChange?.(mapped.id, gender)
-                          onOpenEvolution(mapped, gender)
+                          onGenderChange?.(mapped.id, targetGender)
+                          onOpenEvolution(mapped, targetGender)
                         } finally {
                           setIsOpeningEvolution(false)
                         }
@@ -368,7 +371,7 @@ export function PokemonModal({
                       `}
                     >
                       <PokemonImage
-                        src={getEvolutionSpriteUrl(form.id)}
+                        src={getEvolutionSpriteUrl(form.id, shiny, gender)}
                         alt={form.name}
                         className="h-14 w-14"
                         pokemonId={form.id}
