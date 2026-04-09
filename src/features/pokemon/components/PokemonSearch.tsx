@@ -11,23 +11,26 @@ export function PokemonSearch({ value, onChange }: PokemonSearchProps) {
       <label className="block text-sm font-medium text-gray-700 mb-1">
         Browse
       </label>
-      <Input
-        placeholder="Search Pokémon by name…"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="pr-10"
-      />
 
-      {value.length > 0 && (
-        <button
-          type="button"
-          onClick={() => onChange('')}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900 transition text-lg leading-none"
-          aria-label="Clear search"
-        >
-          ×
-        </button>
-      )}
+      <div className="relative">
+        <Input
+          placeholder="Search Pokémon by name…"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="pr-10"
+        />
+
+        {value.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900 transition text-lg leading-none"
+            aria-label="Clear search"
+          >
+            ×
+          </button>
+        )}
+      </div>
     </div>
   )
 }

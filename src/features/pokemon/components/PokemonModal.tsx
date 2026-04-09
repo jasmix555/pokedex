@@ -172,10 +172,10 @@ export function PokemonModal({
         <div className={`${primaryColor.bg} px-3 py-2 sm:px-5 flex items-center justify-between gap-2`}>
           <div className="flex-1 flex items-center justify-between gap-2 mr-2">
             <div>
-              <p className="text-sm font-semibold text-gray-700">
+              <p className={`text-sm font-semibold ${primaryColor.text}`}>
                 #{String(pokemon.id).padStart(3, '0')}
               </p>
-              <h2 className="capitalize text-2xl font-bold text-gray-900 leading-tight">
+              <h2 className={`capitalize text-2xl font-bold ${primaryColor.text} leading-tight`}>
                 {pokemon.name}
               </h2>
             </div>
@@ -218,6 +218,7 @@ export function PokemonModal({
                   src={spriteUrl}
                   alt={pokemon.name}
                   className="h-40 bg-zinc-800/10 rounded-xl object-contain"
+                  pokemonId={pokemon.id}
                 />
               </div>
 
@@ -233,9 +234,9 @@ export function PokemonModal({
               {pokemon.stats.map(stat => {
                 const statColor =
                   stat.value >= 100 ? 'bg-green-500'
-                  : stat.value >= 75 ? 'bg-blue-500'
-                  : stat.value >= 50 ? 'bg-yellow-500'
-                  : 'bg-red-500'
+                    : stat.value >= 75 ? 'bg-blue-500'
+                      : stat.value >= 50 ? 'bg-yellow-500'
+                        : 'bg-red-500'
                 return (
                   <div key={stat.name}>
                     <div className="flex justify-between text-xs mb-1">
@@ -298,6 +299,7 @@ export function PokemonModal({
                         src={getEvolutionSpriteUrl(evo.id)}
                         alt={evo.name}
                         className="h-14 w-14"
+                        pokemonId={evo.id}
                       />
                       <span className="mt-2 text-xs font-bold capitalize text-zinc-900">{evo.name}</span>
                       <span className="mt-1 text-[9px] text-zinc-600 text-center leading-tight">{evo.details}</span>
@@ -369,6 +371,7 @@ export function PokemonModal({
                         src={getEvolutionSpriteUrl(form.id)}
                         alt={form.name}
                         className="h-14 w-14"
+                        pokemonId={form.id}
                       />
                       <span className="mt-2 text-xs font-bold capitalize text-zinc-900">{form.name}</span>
                     </button>

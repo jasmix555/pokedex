@@ -32,32 +32,21 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
       : pokemon.sprite ?? pokemon.image
   })()
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      onClick(pokemon, gender)
-    }
-  }
-
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onClick(pokemon, gender)}
-      onKeyDown={handleKeyDown}
       className={`
         w-full flex flex-col text-left rounded-lg border-2
-        ${primaryColor.border} bg-white
-        hover:shadow-lg transition hover:scale-105
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+        ${primaryColor.border} bg-white shadow-sm
+        transition
       `}
     >
+      {/* Header — not clickable for modal */}
       <div className={`${primaryColor.bg} px-4 py-3`}>
         <span className={`text-xs font-semibold ${primaryColor.text}`}>
           #{String(pokemon.id).padStart(3, '0')}
         </span>
 
-        <div className="flex items-center justify-between mt-1 gap-2">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-1 gap-2">
           <h3 className={`text-lg font-bold capitalize leading-tight ${primaryColor.text}`}>
             {pokemon.name}
           </h3>
@@ -74,14 +63,34 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
       </div>
 
       <div className="flex flex-col p-4 space-y-3 flex-1">
-        <div className="w-full aspect-square flex items-center justify-center">
+        {/* Image — clickable, hoverable */}
+        <button
+          type="button"
+          onClick={() => onClick(pokemon, gender)}
+          onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onClick(pokemon, gender)
+            }
+          }}
+          className={`
+            w-full aspect-square flex items-center justify-center
+            rounded-xl cursor-pointer
+            transition duration-200
+            hover:scale-102 hover:shadow-md
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+            group
+          `}
+        >
           <PokemonImage
             src={spriteUrl}
             alt={pokemon.name}
-            className="w-56 object-contain bg-zinc-800/10 rounded-xl"
+            className="w-full h-full object-contain bg-zinc-800/10 rounded-xl"
+            pokemonId={pokemon.id}
           />
-        </div>
+        </button>
 
+        {/* Types — stop propagation so badge popover doesn't trigger anything */}
         <div
           className="flex flex-wrap gap-2"
           onClick={e => e.stopPropagation()}
