@@ -10,42 +10,30 @@ export function PokemonSkeleton({ count = 8 }: PokemonSkeletonProps) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="
-            w-full
-            flex flex-col
-            text-left
-            rounded-lg
-            border-2
-            border-zinc-200
-            bg-white
-            overflow-hidden
-            shadow-sm
-          "
+          className="w-full flex flex-col overflow-hidden rounded-2xl border-2 border-zinc-200 bg-white shadow-sm"
         >
-          {/* Header */}
-          <div className="bg-zinc-100 px-4 py-3">
-            <Skeleton className="h-3 w-10 rounded bg-zinc-200" />
-
-            <div className="flex flex-col gap-2 md:gap-0 md:flex-row items-start justify-between mt-1">
-              <Skeleton className="h-5 w-28 rounded bg-zinc-200" />
-
-              <div className="flex items-center gap-3 md:gap-2">
-                <Skeleton className="h-6 w-6 rounded-full bg-zinc-200" />
-                <Skeleton className="h-6 w-6 rounded-full bg-zinc-200" />
-              </div>
+          {/* Header bar */}
+          <div className="flex items-center justify-between gap-2 bg-zinc-100 px-3 py-2">
+            <Skeleton className="h-5 w-12 rounded-full bg-zinc-200" />
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-7 w-7 rounded-full bg-zinc-200" />
+              <Skeleton className="h-7 w-7 rounded-full bg-zinc-200" />
             </div>
           </div>
 
-          {/* Body */}
-          <div className="flex flex-col p-4 space-y-3 flex-1">
-            <div className="w-full aspect-square flex items-center justify-center">
-              {/* Match PokemonImage sizing */}
-              <Skeleton className="w-40 sm:w-48 md:w-56 aspect-square rounded-xl bg-zinc-200" />
+          {/* Sprite viewer */}
+          <div className="relative aspect-square w-full bg-zinc-50">
+            <div className="absolute inset-0 flex items-center justify-center p-6">
+              <Skeleton className="h-full w-full rounded-full bg-zinc-200/80" />
             </div>
+          </div>
 
-            <div className="flex flex-wrap gap-2">
+          {/* Footer */}
+          <div className="flex flex-col gap-2 border-t border-zinc-100 px-3 py-3">
+            <Skeleton className="h-4 w-24 rounded bg-zinc-200" />
+            <div className="flex gap-1.5">
               <Skeleton className="h-6 w-16 rounded-full bg-zinc-200" />
-              <Skeleton className="h-6 w-20 rounded-full bg-zinc-200" />
+              <Skeleton className="h-6 w-14 rounded-full bg-zinc-200" />
             </div>
           </div>
         </div>

@@ -1,4 +1,29 @@
-function formatEvolutionDetail(detail: any) {
+interface NamedAPIResource {
+  name: string
+  url: string
+}
+
+interface EvolutionDetail {
+  trigger?: NamedAPIResource | null
+  min_level?: number | null
+  item?: NamedAPIResource | null
+  held_item?: NamedAPIResource | null
+  location?: NamedAPIResource | null
+  time_of_day?: string
+  min_happiness?: number | null
+  min_beauty?: number | null
+  min_affection?: number | null
+  known_move?: NamedAPIResource | null
+  gender?: number | null
+}
+
+interface ChainLink {
+  species: NamedAPIResource
+  evolution_details: EvolutionDetail[]
+  evolves_to: ChainLink[]
+}
+
+function formatEvolutionDetail(detail: EvolutionDetail) {
   const parts: string[] = []
 
   if (detail.trigger?.name) {
@@ -81,7 +106,7 @@ export async function fetchPokemonEvolutionChain(pokemonKey: number | string) {
 
   const chain: { id: number; name: string; details: string }[] = []
 
-  function traverse(node: any) {
+  function traverse(node: ChainLink) {
     const id = Number(node.species.url.split('/').filter(Boolean).pop())
 
     const details =

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface PokemonImageProps {
@@ -19,7 +19,9 @@ export function PokemonImage({ src, alt, className, pokemonId }: PokemonImagePro
   const [index, setIndex] = useState(0)
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
+  const imgRef = useRef<HTMLImageElement | null>(null)
 
+  // Reset state whenever the sprite source changes
   useEffect(() => {
     setIndex(0)
     setLoaded(false)
@@ -29,10 +31,41 @@ export function PokemonImage({ src, alt, className, pokemonId }: PokemonImagePro
   const currentSrc = fallbackList[index]
   const noSprite = !currentSrc || failed
 
+  const handleError = useCallback(() => {
+    setIndex(prev => {
+      if (prev < fallbackList.length - 1) {
+        setLoaded(false)
+        return prev + 1
+      }
+      setFailed(true)
+      return prev
+    })
+  }, [fallbackList.length])
+
+  /**
+   * Browser-cached images often finish loading *before* React attaches the
+   * onLoad handler, so the event never fires and the image stays hidden behind
+   * the skeleton forever. After each render we check img.complete directly and
+   * resolve the loaded/error state ourselves.
+   */
+  useEffect(() => {
+    const img = imgRef.current
+    if (!img || !currentSrc) return
+
+    if (img.complete) {
+      if (img.naturalWidth > 0) {
+        setLoaded(true)
+      } else {
+        handleError()
+      }
+    }
+  }, [currentSrc, index, handleError])
+
   return (
     <div className={`relative overflow-hidden rounded-xl ${className}`}>
       {!noSprite && (
         <img
+          ref={imgRef}
           key={currentSrc}
           src={currentSrc}
           alt={alt}
@@ -43,14 +76,7 @@ export function PokemonImage({ src, alt, className, pokemonId }: PokemonImagePro
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
           onLoad={() => setLoaded(true)}
-          onError={() => {
-            if (index < fallbackList.length - 1) {
-              setLoaded(false)
-              setIndex(prev => prev + 1)
-            } else {
-              setFailed(true)
-            }
-          }}
+          onError={handleError}
         />
       )}
 

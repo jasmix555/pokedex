@@ -8,33 +8,50 @@ import { mapPokemon } from '../utils/mapPokemon'
 
 /* ---------------- list pagination ---------------- */
 
+async function fetchJson<T>(url: string, retries = 2): Promise<T> {
+  let lastError: unknown
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`Request failed (${res.status})`)
+      return (await res.json()) as T
+    } catch (err) {
+      lastError = err
+      // small backoff before retrying
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, 300 * (attempt + 1)))
+      }
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('Request failed')
+}
+
 export async function fetchPokemonList(
   limit: number,
   offset: number
 ) {
-  const res = await fetch(
+  const data = await fetchJson<PokemonListResponse>(
     `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`
   )
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch Pokémon list')
-  }
-
-  const data: PokemonListResponse = await res.json()
-
-  // 👇 hydrate each Pokémon
-  const detailed = await Promise.all(
-    data.results.map(async item => {
-      const res = await fetch(item.url)
-      if (!res.ok) {
-        throw new Error('Failed to fetch Pokémon')
-      }
-      const pokemon: PokemonResponse = await res.json()
-      return mapPokemon(pokemon)
-    })
+  // Hydrate each Pokémon. Use allSettled so a single failed detail fetch
+  // doesn't blow away the entire batch — we keep whatever succeeded and
+  // preserve ordering.
+  const settled = await Promise.allSettled(
+    data.results.map(item => fetchJson<PokemonResponse>(item.url))
   )
 
-  return detailed
+  const detailed = settled
+    .filter(
+      (r): r is PromiseFulfilledResult<PokemonResponse> =>
+        r.status === 'fulfilled'
+    )
+    .map(r => mapPokemon(r.value))
+
+  // rawCount = how many entries the list endpoint returned for this page.
+  // Pagination decisions should use this, not the number of detail fetches
+  // that happened to succeed.
+  return { pokemon: detailed, rawCount: data.results.length }
 }
 /* ---------------- single pokemon ---------------- */
 

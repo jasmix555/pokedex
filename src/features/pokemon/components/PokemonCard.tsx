@@ -34,67 +34,62 @@ export function PokemonCard({ pokemon, onClick, gender, onGenderChange, shiny, o
 
   return (
     <div
-      className={`
-        w-full flex flex-col text-left rounded-lg border-2
-        ${primaryColor.border} bg-white shadow-sm
-        transition
-      `}
+      className={`group/card w-full flex flex-col overflow-hidden rounded-2xl border-2 bg-white ${primaryColor.border} shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg`}
     >
-      {/* Header — not clickable for modal */}
-      <div className={`${primaryColor.bg} px-4 py-3`}>
-        <span className={`text-xs font-semibold ${primaryColor.text}`}>
-          #{String(pokemon.id).padStart(3, '0')}
+      {/* Header bar */}
+      <div className={`${primaryColor.bg} flex items-center justify-between gap-2 px-3 py-2`}>
+        <span className={`rounded-full bg-black/15 px-2 py-0.5 text-[11px] font-bold tabular-nums ${primaryColor.text}`}>
+          #{String(pokemon.id).padStart(4, '0')}
         </span>
 
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-1 gap-2">
-          <h3 className={`text-lg font-bold capitalize leading-tight ${primaryColor.text}`}>
-            {pokemon.name}
-          </h3>
-
-          <div className="flex items-center gap-1 shrink-0">
-            {hasShiny && (
-              <ShinyButton shiny={shiny} onShinyChange={onShinyChange} />
-            )}
-            {hasFemaleSprite && (
-              <GenderButton gender={gender} onGenderChange={onGenderChange} />
-            )}
-          </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {hasShiny && <ShinyButton shiny={shiny} onShinyChange={onShinyChange} />}
+          {hasFemaleSprite && <GenderButton gender={gender} onGenderChange={onGenderChange} />}
         </div>
       </div>
 
-      <div className="flex flex-col p-4 space-y-3 flex-1">
-        {/* Image — clickable, hoverable */}
-        <button
-          type="button"
-          onClick={() => onClick(pokemon, gender)}
-          onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              onClick(pokemon, gender)
-            }
-          }}
-          className={`
-            w-full aspect-square flex items-center justify-center
-            rounded-xl cursor-pointer
-            transition duration-200
-            hover:scale-102 hover:shadow-md
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
-            group
-          `}
-        >
+      {/* Sprite "viewer" — clickable */}
+      <button
+        type="button"
+        onClick={() => onClick(pokemon, gender)}
+        onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onClick(pokemon, gender)
+          }
+        }}
+        aria-label={`View ${pokemon.name}`}
+        className="relative w-full aspect-square cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+        style={{
+          background: `radial-gradient(circle at 50% 45%, ${primaryColor.hex}26 0%, ${primaryColor.hex}0d 55%, transparent 75%)`,
+        }}
+      >
+        {/* Faint Poke Ball watermark */}
+        <img
+          src="/pokeball.png"
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="pointer-events-none absolute left-1/2 top-1/2 w-3/4 -translate-x-1/2 -translate-y-1/2 opacity-[0.06]"
+        />
+
+        <div className="relative z-10 flex h-full w-full items-center justify-center p-4">
           <PokemonImage
             src={spriteUrl}
             alt={pokemon.name}
-            className="w-full h-full object-contain bg-zinc-800/10 rounded-xl"
+            className="h-full w-full object-contain transition duration-200 group-hover/card:scale-105"
             pokemonId={pokemon.id}
           />
-        </button>
+        </div>
+      </button>
 
-        {/* Types — stop propagation so badge popover doesn't trigger anything */}
-        <div
-          className="flex flex-wrap gap-2"
-          onClick={e => e.stopPropagation()}
-        >
+      {/* Footer: name + types */}
+      <div className="flex flex-1 flex-col gap-2 border-t border-zinc-100 px-3 py-3">
+        <h3 className="text-base font-extrabold capitalize leading-tight text-zinc-800">
+          {pokemon.name.replace('-', ' ')}
+        </h3>
+
+        <div className="flex flex-wrap gap-1.5" onClick={e => e.stopPropagation()}>
           {pokemon.types.map(type => (
             <TypeBadge key={type} type={type} allTypes={pokemon.types} />
           ))}

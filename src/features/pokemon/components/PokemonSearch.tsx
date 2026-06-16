@@ -7,7 +7,7 @@ interface PokemonSearchProps {
 
 export function PokemonSearch({ value, onChange }: PokemonSearchProps) {
   return (
-    <div className="relative max-w-sm">
+    <div className="relative w-full">
       <label className="block text-sm font-medium text-gray-700 mb-1">
         Browse
       </label>

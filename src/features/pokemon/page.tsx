@@ -9,6 +9,7 @@ import { PokemonGrid } from './components/PokemonGrid'
 import { PokemonSearch } from './components/PokemonSearch'
 import { PokemonModal } from './components/PokemonModal'
 import { PokemonFilter } from './components/PokemonFilter'
+import { PokedexFrame } from './components/PokedexFrame'
 
 import { Pokemon } from './types/pokemon.types'
 import { GENERATIONS, GenerationKey } from '@/constants/generations'
@@ -18,17 +19,19 @@ export default function PokedexPage() {
   /* ----------------------------------------
    * Data sources
    * ---------------------------------------- */
+  const [search, setSearch] = useState('')
+  const [modalStack, setModalStack] = useState<Pokemon[]>([])
+  const [generation, setGeneration] = useState<GenerationKey>('all')
+
   const {
     pokemon,
     isLoading: isListLoading,
     error,
     loadMore,
     hasMore,
-  } = usePokemonList({ limit: 20 })
+    retry,
+  } = usePokemonList({ limit: 20, range: GENERATIONS[generation].range })
 
-  const [search, setSearch] = useState('')
-  const [modalStack, setModalStack] = useState<Pokemon[]>([])
-  const [generation, setGeneration] = useState<GenerationKey>('all')
   const [pokemonGenders, setPokemonGenders] = useState<Map<number, 'male' | 'female'>>(new Map())
   const [pokemonShinies, setPokemonShinies] = useState<Map<number, boolean>>(new Map())
 
@@ -74,10 +77,9 @@ export default function PokedexPage() {
       return searchResults.filter(p => p.id >= min && p.id <= max)
     }
 
-    if (!range) return pokemon
-
-    const [min, max] = range
-    return pokemon.filter(p => p.id >= min && p.id <= max)
+    // In browse mode the list hook already loads only the selected
+    // generation's range, so no extra filtering is needed.
+    return pokemon
   })()
 
   // Results outside current generation with their generation info
@@ -109,38 +111,11 @@ export default function PokedexPage() {
   })()
 
   /* ----------------------------------------
-   * Auto-load until the selected generation
-   * has at least one Pokémon available
-   * ---------------------------------------- */
-  const genRange = GENERATIONS[generation].range
-
-  const genIsFullyReached = (() => {
-    if (!genRange) return true          // "all" — nothing to wait for
-    const [, max] = genRange
-    // We've loaded past the end of this gen, or there's nothing more to load
-    return !hasMore || pokemon.some(p => p.id >= max)
-  })()
-
-  useEffect(() => {
-    if (isSearching) return
-    if (isListLoading) return
-    if (genIsFullyReached) return
-
-    // Keep fetching until we reach this generation's range
-    loadMore()
-  }, [isSearching, isListLoading, genIsFullyReached, loadMore])
-
-  /* ----------------------------------------
    * Derived loading state
    * ---------------------------------------- */
-  const isGenLoading = !isSearching && !genIsFullyReached
-
-  const isGridLoading =
-    pokemon.length === 0
-      ? true
-      : isSearching
-        ? isSearchLoading && searchResults.length === 0
-        : isGenLoading
+  const isGridLoading = isSearching
+    ? isSearchLoading && searchResults.length === 0
+    : isListLoading && pokemon.length === 0
 
   /* ----------------------------------------
    * Infinite scroll (browse mode only)
@@ -165,13 +140,29 @@ export default function PokedexPage() {
   }, [isSearching, isListLoading, loadMore])
 
   /* ----------------------------------------
-   * Error state
+   * Error state (only when nothing loaded)
    * ---------------------------------------- */
-  if (error) {
+  if (error && pokemon.length === 0) {
     return (
-      <div className="p-8 text-center text-destructive">
-        Failed to load Pokémon
-      </div>
+      <PokedexFrame>
+        <div className="flex flex-col items-center gap-4 py-12 text-center">
+          <div className="h-14 w-14 rounded-full border-4 border-zinc-400 bg-zinc-200" />
+          <p className="pkdx-font text-[10px] leading-relaxed text-zinc-700">
+            CONNECTION LOST
+          </p>
+          <p className="max-w-xs text-sm text-zinc-500">
+            Couldn't reach the Pokémon network. Check your connection and try
+            again.
+          </p>
+          <button
+            type="button"
+            onClick={retry}
+            className="rounded-full bg-[var(--pkdx-red)] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--pkdx-red-dark)]"
+          >
+            Retry
+          </button>
+        </div>
+      </PokedexFrame>
     )
   }
 
@@ -179,30 +170,34 @@ export default function PokedexPage() {
    * Render
    * ---------------------------------------- */
   return (
-    <div className="p-2 space-y-5 sm:p-4 md:p-6 lg:p-8 min-h-screen max-w-7xl mx-auto">
-      <header className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold">Pokédex</h1>
-        </div>
-      </header>
+    <>
+      <PokedexFrame
+        controls={
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <PokemonSearch value={search} onChange={setSearch} />
+            <PokemonFilter value={generation} onChange={setGeneration} />
+          </div>
+        }
+      >
+        <PokemonGrid
+          pokemon={displayPokemon}
+          isLoading={isGridLoading}
+          onSelect={(pokemon: Pokemon, gender: 'male' | 'female') => openPokemonModal(pokemon, gender)}
+          pokemonGenders={pokemonGenders}
+          onGenderChange={updatePokemonGender}
+          pokemonShinies={pokemonShinies}
+          onShinyChange={handleShinyChange}
+          similarFinds={similarFinds}
+          currentGen={GENERATIONS[generation].label}
+          similarNames={similarNames}
+          searchQuery={search}
+        />
 
-      <PokemonSearch value={search} onChange={setSearch} />
-
-      <PokemonFilter value={generation} onChange={setGeneration} />
-
-      <PokemonGrid
-        pokemon={displayPokemon}
-        isLoading={isGridLoading}
-        onSelect={(pokemon: Pokemon, gender: 'male' | 'female') => openPokemonModal(pokemon, gender)}
-        pokemonGenders={pokemonGenders}
-        onGenderChange={updatePokemonGender}
-        pokemonShinies={pokemonShinies}
-        onShinyChange={handleShinyChange}
-        similarFinds={similarFinds}
-        currentGen={GENERATIONS[generation].label}
-        similarNames={similarNames}
-        searchQuery={search}
-      />
+        {/* Infinite scroll sentinel */}
+        {!isSearching && hasMore && (
+          <div ref={sentinelRef} aria-hidden className="h-1" />
+        )}
+      </PokedexFrame>
 
       <PokemonModal
         pokemon={selectedPokemon}
@@ -214,13 +209,7 @@ export default function PokedexPage() {
         onShinyChange={handleShinyChange}
       />
 
-      {/* Infinite scroll sentinel */}
-      {!isSearching && hasMore && !isGenLoading && (
-        <div ref={sentinelRef} aria-hidden className="h-1" />
-      )}
-
-
       <ScrollToTopButton/>
-    </div>
+    </>
   )
 }

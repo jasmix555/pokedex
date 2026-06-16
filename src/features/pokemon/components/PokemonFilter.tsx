@@ -7,7 +7,7 @@ interface Props {
 
 export function PokemonFilter({ value, onChange }: Props) {
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full sm:w-60 sm:shrink-0">
       <label className="block text-sm font-medium text-gray-700 mb-1">
         Generation
       </label>

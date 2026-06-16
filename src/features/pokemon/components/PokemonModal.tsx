@@ -40,6 +40,15 @@ interface Props {
   onShinyChange?: (pokemonId: number, shiny: boolean) => void
 }
 
+const STAT_LABELS: Record<string, string> = {
+  hp: 'HP',
+  attack: 'ATK',
+  defense: 'DEF',
+  'special-attack': 'SP.ATK',
+  'special-defense': 'SP.DEF',
+  speed: 'SPD',
+}
+
 function getEvolutionSpriteUrl(evoId: number, shiny: boolean, gender: 'male' | 'female'): string {
   const base = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon'
   if (shiny && gender === 'female') return `${base}/shiny/female/${evoId}.png`
@@ -103,7 +112,7 @@ export function PokemonModal({
         const res = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${speciesKey}`)
         if (!res.ok) return
         const data = await res.json()
-        const forms = data.varieties.map((v: any) => {
+        const forms = data.varieties.map((v: { pokemon: { name: string; url: string } }) => {
           const url: string = v.pokemon.url
           const id = Number(url.split('/').filter(Boolean).pop())
           return { id, name: v.pokemon.name }
@@ -153,32 +162,36 @@ export function PokemonModal({
       : pokemon.sprite ?? pokemon.image
   })()
 
-  const evoTheme = shiny
-    ? 'ring-2 ring-yellow-400/60 bg-yellow-50/60'
-    : gender === 'female'
-      ? 'ring-2 ring-pink-400/50 bg-pink-50/60'
-      : 'ring-2 ring-blue-400/50 bg-blue-50/60'
+  const statTotal = pokemon.stats.reduce((sum, s) => sum + s.value, 0)
 
   return (
     <Dialog open={!!pokemon} onOpenChange={onClose}>
       <DialogContent
         showCloseButton={false}
-        className="bg-white text-gray-900 border-0 shadow-xl rounded-xl overflow-hidden max-w-[95vw] sm:max-w-2xl"
+        className="border border-zinc-200 bg-white text-gray-900 shadow-2xl rounded-2xl overflow-hidden p-0 gap-0 max-w-[95vw] sm:max-w-2xl"
       >
         <DialogTitle className="sr-only">{pokemon.name} Details</DialogTitle>
         <DialogDescription className="sr-only">
           View details, stats, and the evolution path for this Pokémon.
         </DialogDescription>
 
-        {/* Header */}
-        <div className={`${primaryColor.bg} px-3 py-2 sm:px-5 flex items-center justify-between gap-2`}>
-          <div className="flex-1 flex items-center justify-between gap-2 mr-2">
-            <div>
-              <p className="text-sm font-semibold text-gray-700">
-                #{String(pokemon.id).padStart(3, '0')}
-              </p>
-              <h2 className="capitalize text-2xl font-bold text-gray-900 leading-tight">
-                {pokemon.name}
+        {/* Header — device control strip */}
+        <div className={`relative ${primaryColor.bg} px-4 py-3 sm:px-5`}>
+          {/* Indicator lights echoing the device */}
+          <div className="flex items-center gap-1.5">
+            <span className="pkdx-light h-3 w-3 rounded-full bg-sky-300 text-sky-300" />
+            <span className="pkdx-light h-2 w-2 rounded-full bg-red-400 text-red-400" />
+            <span className="pkdx-light h-2 w-2 rounded-full bg-yellow-300 text-yellow-300" />
+            <span className="pkdx-light h-2 w-2 rounded-full bg-green-400 text-green-400" />
+          </div>
+
+          <div className="mt-2 flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <span className={`inline-block rounded-full bg-black/15 px-2 py-0.5 text-[11px] font-bold tabular-nums ${primaryColor.text}`}>
+                #{String(pokemon.id).padStart(4, '0')}
+              </span>
+              <h2 className={`mt-1 truncate text-2xl font-extrabold capitalize leading-tight ${primaryColor.text}`}>
+                {pokemon.name.replace('-', ' ')}
               </h2>
             </div>
 
@@ -201,85 +214,103 @@ export function PokemonModal({
                   }}
                 />
               )}
+              <DialogClose className="ml-1 rounded-full bg-white/80 p-1.5 text-gray-900 shadow-sm transition hover:bg-white shrink-0">
+                <XIcon className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </DialogClose>
             </div>
           </div>
-
-          <DialogClose className="text-gray-900 bg-white rounded p-1 hover:opacity-80 transition-opacity shrink-0">
-            <XIcon className="h-5 w-5" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
         </div>
 
-        <div className="p-1 space-y-2 md:px-6 md:pb-6 md:space-y-6 overflow-y-auto max-h-[calc(90vh-160px)]">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Body */}
+        <div className="space-y-5 overflow-y-auto bg-zinc-50 p-4 sm:p-6 max-h-[calc(90vh-150px)]">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-5">
 
-            {/* Image + types */}
-            <div className="col-span-1 space-y-4 flex flex-col items-center justify-end">
-              <div className="flex justify-center">
-                <PokemonImage
-                  src={spriteUrl}
-                  alt={pokemon.name}
-                  className="h-40 bg-zinc-800/10 rounded-xl object-contain"
-                  pokemonId={pokemon.id}
+            {/* Sprite viewer + types */}
+            <div className="sm:col-span-2 flex flex-col items-center gap-3">
+              <div
+                className="relative flex aspect-square w-full max-w-[220px] items-center justify-center overflow-hidden rounded-2xl border-2 border-zinc-200 bg-white"
+                style={{
+                  background: `radial-gradient(circle at 50% 45%, ${primaryColor.hex}26 0%, ${primaryColor.hex}0d 55%, #ffffff 80%)`,
+                }}
+              >
+                <img
+                  src="/pokeball.png"
+                  alt=""
+                  aria-hidden
+                  draggable={false}
+                  className="pointer-events-none absolute left-1/2 top-1/2 w-3/4 -translate-x-1/2 -translate-y-1/2 opacity-[0.06]"
                 />
+                <div className="relative z-10 flex h-full w-full items-center justify-center p-5">
+                  <PokemonImage
+                    src={spriteUrl}
+                    alt={pokemon.name}
+                    className="h-full w-full object-contain"
+                    pokemonId={pokemon.id}
+                  />
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 justify-center">
+              <div className="flex flex-wrap justify-center gap-2">
                 {pokemon.types.map(type => (
                   <TypeBadge key={type} type={type} allTypes={pokemon.types} />
                 ))}
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="col-span-1 lg:col-span-2 space-y-2">
-              {pokemon.stats.map(stat => {
-                const statColor =
-                  stat.value >= 100 ? 'bg-green-500'
-                  : stat.value >= 75 ? 'bg-blue-500'
-                  : stat.value >= 50 ? 'bg-yellow-500'
-                  : 'bg-red-500'
-                return (
-                  <div key={stat.name}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="capitalize font-semibold text-gray-700">
-                        {stat.name.replace('-', ' ')}
+            {/* Base stats */}
+            <div className="sm:col-span-3 rounded-2xl border-2 border-zinc-200 bg-white p-4">
+              <p className="pkdx-font mb-3 text-[9px] tracking-wider text-zinc-500">BASE STATS</p>
+              <div className="space-y-2">
+                {pokemon.stats.map(stat => {
+                  const statColor =
+                    stat.value >= 100 ? 'bg-emerald-500'
+                    : stat.value >= 75 ? 'bg-sky-500'
+                    : stat.value >= 50 ? 'bg-amber-400'
+                    : 'bg-rose-500'
+                  return (
+                    <div key={stat.name} className="flex items-center gap-2">
+                      <span className="w-14 shrink-0 text-[10px] font-bold uppercase text-zinc-500">
+                        {STAT_LABELS[stat.name] ?? stat.name}
                       </span>
-                      <span className="font-bold text-gray-900">{stat.value}</span>
+                      <span className="w-8 shrink-0 text-right text-xs font-bold tabular-nums text-zinc-800">
+                        {stat.value}
+                      </span>
+                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-zinc-200">
+                        <div
+                          className={`h-full ${statColor} rounded-full transition-all`}
+                          style={{ width: `${Math.min((stat.value / 255) * 100, 100)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${statColor} rounded-full transition-all`}
-                        style={{ width: `${Math.min((stat.value / 255) * 100, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-2">
+                <span className="text-[10px] font-bold uppercase text-zinc-500">Total</span>
+                <span className="text-sm font-extrabold tabular-nums text-zinc-900">{statTotal}</span>
+              </div>
             </div>
           </div>
 
           {/* Evolution */}
-          <div className="border-t-2 border-gray-200 pt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-bold">Evolution</h4>
+          <section className="rounded-2xl border-2 border-zinc-200 bg-white p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <p className="pkdx-font text-[9px] tracking-wider text-zinc-500">EVOLUTION</p>
               {isLoadingEvo && (
-                <span className="inline-flex items-center gap-2 text-xs text-zinc-500">
-                  <span className="inline-block h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-blue-500" />
-                  Loading...
-                </span>
+                <span className="inline-block h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-[var(--pkdx-red)]" />
               )}
             </div>
 
             {isLoadingEvo && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                <Skeleton className="h-20 w-full rounded-lg" />
-                <Skeleton className="h-20 w-full rounded-lg" />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <Skeleton className="h-24 w-full rounded-xl" />
+                <Skeleton className="h-24 w-full rounded-xl" />
               </div>
             )}
 
             {!isLoadingEvo && evolutions.length > 1 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {evolutions.map(evo => {
                   const isCurrent = evo.id === pokemon.id
                   return (
@@ -288,13 +319,12 @@ export function PokemonModal({
                       type="button"
                       onClick={() => handleEvolutionClick(evo)}
                       disabled={isCurrent || isOpeningEvolution}
-                      className={`group flex flex-col items-center border-2 rounded-lg p-2 text-center transition
-                        ${!isCurrent ? evoTheme : ''}
+                      className={`group flex flex-col items-center rounded-xl border-2 p-2 text-center transition
                         ${isCurrent
                           ? `${primaryColor.border} ${primaryColor.bg}`
-                          : 'border-gray-300 hover:border-blue-500 hover:shadow-md'
+                          : 'border-zinc-200 bg-zinc-50 hover:-translate-y-0.5 hover:border-[var(--pkdx-red)] hover:shadow-md'
                         }
-                        disabled:border-zinc-200 disabled:cursor-default disabled:opacity-50
+                        disabled:cursor-default disabled:opacity-60
                       `}
                     >
                       <PokemonImage
@@ -303,10 +333,14 @@ export function PokemonModal({
                         className="h-14 w-14"
                         pokemonId={evo.id}
                       />
-                      <span className="mt-2 text-xs font-bold capitalize text-zinc-900">{evo.name}</span>
-                      <span className="mt-1 text-[9px] text-zinc-600 text-center leading-tight">{evo.details}</span>
+                      <span className={`mt-2 text-xs font-bold capitalize ${isCurrent ? primaryColor.text : 'text-zinc-900'}`}>
+                        {evo.name.replace('-', ' ')}
+                      </span>
+                      <span className={`mt-1 text-[9px] leading-tight ${isCurrent ? primaryColor.text : 'text-zinc-500'}`}>
+                        {evo.details}
+                      </span>
                       {isCurrent && (
-                        <span className="mt-2 rounded-full bg-green-500 text-white px-2 py-0.5 text-[9px] font-bold">
+                        <span className="mt-2 rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-bold text-zinc-700">
                           Current
                         </span>
                       )}
@@ -317,32 +351,29 @@ export function PokemonModal({
             )}
 
             {isOpeningEvolution && (
-              <p className="text-xs text-gray-500">Opening selected Pokémon...</p>
+              <p className="mt-2 text-xs text-zinc-500">Opening selected Pokémon...</p>
             )}
 
             {!isLoadingEvo && evolutions.length <= 1 && (
-              <p className="text-xs text-gray-500">This Pokémon does not evolve.</p>
+              <p className="text-xs text-zinc-500">This Pokémon does not evolve.</p>
             )}
-          </div>
+          </section>
 
           {/* Alt Forms */}
-          <div className="border-t-2 border-gray-200 pt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-bold">Alt Forms</h4>
+          <section className="rounded-2xl border-2 border-zinc-200 bg-white p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <p className="pkdx-font text-[9px] tracking-wider text-zinc-500">ALT FORMS</p>
               {isLoadingAltForms && (
-                <span className="inline-flex items-center gap-2 text-xs text-zinc-500">
-                  <span className="inline-block h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-blue-500" />
-                  Loading...
-                </span>
+                <span className="inline-block h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-[var(--pkdx-red)]" />
               )}
             </div>
 
             {!isLoadingAltForms && altForms.length <= 1 && (
-              <p className="text-xs text-gray-500">No alternate forms.</p>
+              <p className="text-xs text-zinc-500">No alternate forms.</p>
             )}
 
             {!isLoadingAltForms && altForms.length > 1 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {altForms.map(form => {
                   const isCurrent = form.id === pokemon.id
                   return (
@@ -363,10 +394,10 @@ export function PokemonModal({
                           setIsOpeningEvolution(false)
                         }
                       }}
-                      className={`group flex flex-col items-center border-2 rounded-lg p-2 text-center transition
+                      className={`group flex flex-col items-center rounded-xl border-2 p-2 text-center transition
                         ${isCurrent
                           ? `${primaryColor.border} ${primaryColor.bg}`
-                          : 'border-gray-300 hover:border-blue-500 hover:shadow-md'
+                          : 'border-zinc-200 bg-zinc-50 hover:-translate-y-0.5 hover:border-[var(--pkdx-red)] hover:shadow-md'
                         }
                       `}
                     >
@@ -376,13 +407,15 @@ export function PokemonModal({
                         className="h-14 w-14"
                         pokemonId={form.id}
                       />
-                      <span className="mt-2 text-xs font-bold capitalize text-zinc-900">{form.name}</span>
+                      <span className={`mt-2 text-xs font-bold capitalize ${isCurrent ? primaryColor.text : 'text-zinc-900'}`}>
+                        {form.name.replace('-', ' ')}
+                      </span>
                     </button>
                   )
                 })}
               </div>
             )}
-          </div>
+          </section>
         </div>
       </DialogContent>
     </Dialog>
